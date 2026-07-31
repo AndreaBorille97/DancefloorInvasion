@@ -1,11 +1,12 @@
 using UnityEngine;
 
-// Da mettere sul prefab del Raver (l'alleato generato da RaverPickup), insieme a
-// RaverAttack. Comportamento da guardia difensiva, non più da inseguitore: resta fermo
-// vicino al punto in cui è stato posizionato/generato (guardPosition, catturato in Awake)
-// e si attiva per caricare lo Sbirro più vicino solo quando questo entra entro engageRadius
-// da quel punto, ricalcolando periodicamente; appena la minaccia sparisce o esce dal
-// raggio, torna verso guardPosition invece di restare piantato dove si trovava. Smette di
+// Da mettere sul prefab del Raver (posizionato a mano in scena, non più generato da uno
+// spawner/pickup dedicato), insieme a RaverAttack. Comportamento da guardia difensiva, non
+// da inseguitore: vaga leggermente attorno al punto in cui è stato posizionato
+// (guardPosition, catturato in Awake, vedi idleWanderRadius/idleWanderInterval) invece di
+// restare fermo come un blocco statico, e si attiva per caricare lo Sbirro più vicino solo
+// quando questo entra entro engageRadius da quel punto, ricalcolando periodicamente; appena
+// la minaccia sparisce o esce dal raggio, torna a vagare in posizione di guardia. Smette di
 // avvicinarsi entro minApproachDistance dal bersaglio, restando comunque a contatto: evita
 // di sfondarlo/compenetrarlo quando la velocità è alta (es. buff drug, vedi RaverDrugBuff).
 [RequireComponent(typeof(Rigidbody))]
@@ -23,12 +24,22 @@ public class RaverChase : MonoBehaviour
     [Tooltip("Distanza minima dal bersaglio oltre la quale il Raver smette di avvicinarsi: deve restare (di poco) inferiore alla somma dei raggi dei collider, altrimenti il Raver non tocca più il bersaglio e RaverAttack (a contatto) non parte più. Tienilo vicino a quella somma (qui 1: 0.5 Raver + 0.5 Sbirro): una sovrapposizione più marcata costringe la fisica a correggerla ad ogni FixedUpdate, ed è quello scatto/stuttering che si vede a velocità elevata (es. buff drug).")]
     [SerializeField] private float minApproachDistance = 0.95f;
 
+    [Header("Movimento a riposo")]
+    [Tooltip("Raggio entro cui il Raver si sposta a caso attorno al punto di guardia quando non sta ingaggiando nessuno, per non restare fermo come un blocco statico.")]
+    [SerializeField] private float idleWanderRadius = 1.5f;
+    [Tooltip("Ogni quanti secondi (circa) sceglie un nuovo punto a caso attorno al punto di guardia.")]
+    [SerializeField] private float idleWanderInterval = 3f;
+    [Tooltip("Velocità di movimento mentre vaga a riposo: più lenta del passo da combattimento.")]
+    [SerializeField] private float idleMoveSpeed = 1f;
+
     [Header("Modalità veicolo (Camper)")]
     [Tooltip("Quanto velocemente sterza mentre guida il Camper (gradi al secondo), invece di ruotare di scatto come normalmente: vedi SetVehicleMode.")]
     [SerializeField] private float vehicleTurnSpeed = 180f;
 
     private Rigidbody rb;
     private Vector3 guardPosition; // punto a cui torna quando non c'è nessuna minaccia da ingaggiare, catturato in Awake
+    private Vector3 wanderTarget; // punto corrente del vagare a riposo, entro idleWanderRadius da guardPosition
+    private float wanderTimer;
     private Transform target;
     private Transform forcedTarget; // se impostato, ignora l'AI normale e punta dritto qui (vedi SetForcedTarget)
     private float retargetTimer;
@@ -72,6 +83,7 @@ public class RaverChase : MonoBehaviour
         rb.constraints |= RigidbodyConstraints.FreezePositionY;
 
         guardPosition = transform.position;
+        wanderTarget = guardPosition;
 
         AcquireNearestEnemy();
     }
@@ -88,17 +100,25 @@ public class RaverChase : MonoBehaviour
             AcquireNearestEnemy();
         }
 
+        // A riposo (nessuna minaccia da ingaggiare, nessuna destinazione forzata dal Camper):
+        // vaga leggermente attorno al punto di guardia invece di restare fermo come un blocco
+        // statico, e lo fa al passo lento idleMoveSpeed invece del passo da combattimento.
+        bool isIdle = forcedTarget == null && target == null;
+        if (isIdle)
+        {
+            UpdateWander();
+        }
+
         Vector3 destination = GetMoveDestination();
         Vector3 toTarget = destination - rb.position;
         toTarget.y = 0f;
 
-        Move(toTarget);
+        Move(toTarget, isIdle ? idleMoveSpeed : moveSpeed);
         Rotate(toTarget);
     }
 
     // In ordine di priorità: destinazione forzata (il Camper da raggiungere) > Sbirro
-    // ingaggiato entro engageRadius da guardPosition > guardPosition stessa, cioè torna
-    // in posizione di guardia quando non c'è nessuna minaccia nei paraggi.
+    // ingaggiato entro engageRadius da guardPosition > punto corrente del vagare a riposo.
     private Vector3 GetMoveDestination()
     {
         if (forcedTarget != null)
@@ -106,7 +126,24 @@ public class RaverChase : MonoBehaviour
             return forcedTarget.position;
         }
 
-        return target != null ? target.position : guardPosition;
+        return target != null ? target.position : wanderTarget;
+    }
+
+    // Sceglie un nuovo punto a caso entro idleWanderRadius da guardPosition ogni
+    // idleWanderInterval secondi circa: minApproachDistance in Move() ferma comunque il
+    // Raver poco prima di arrivarci, quindi il risultato è uno spostarsi leggero, non un
+    // vero e proprio girovagare.
+    private void UpdateWander()
+    {
+        wanderTimer += Time.fixedDeltaTime;
+        if (wanderTimer < idleWanderInterval)
+        {
+            return;
+        }
+
+        wanderTimer = 0f;
+        Vector2 offset = Random.insideUnitCircle * idleWanderRadius;
+        wanderTarget = guardPosition + new Vector3(offset.x, 0f, offset.y);
     }
 
     // Ricalcola lo Sbirro più vicino, ma solo se entro engageRadius da guardPosition:
@@ -130,7 +167,7 @@ public class RaverChase : MonoBehaviour
         target = nearest;
     }
 
-    private void Move(Vector3 toTarget)
+    private void Move(Vector3 toTarget, float speed)
     {
         if (toTarget.magnitude <= minApproachDistance)
         {
@@ -143,7 +180,7 @@ public class RaverChase : MonoBehaviour
         // sta sterzando gradualmente verso il bersaglio), non in linea retta dritto lì:
         // è quello che dà l'effetto di un mezzo che curva invece di planare di lato.
         Vector3 direction = vehicleMode ? rb.rotation * Vector3.forward : toTarget.normalized;
-        rb.MovePosition(rb.position + direction * moveSpeed * Time.fixedDeltaTime);
+        rb.MovePosition(rb.position + direction * speed * Time.fixedDeltaTime);
     }
 
     private void Rotate(Vector3 toTarget)
