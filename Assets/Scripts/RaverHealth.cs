@@ -48,6 +48,9 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     // Usato da CamperVehicle/PlayerCamperSummon: un Raver a terra non può essere richiamato a pilotare il Camper.
     public bool IsDown => isDown;
 
+    // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta; 0 se a terra.
+    public float HealthFraction => isDown ? 0f : Mathf.Clamp01(currentHealth / maxHealth);
+
     void Awake()
     {
         currentHealth = maxHealth;

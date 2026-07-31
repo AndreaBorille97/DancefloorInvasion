@@ -21,6 +21,9 @@ public class DJConsoleHealth : MonoBehaviour, IEnemyAttackTarget
     private Color originalColor;
     private Coroutine flashRoutine;
 
+    // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta.
+    public float HealthFraction => Mathf.Clamp01(1f - (float)hitsTaken / maxHits);
+
     void Awake()
     {
         if (targetRenderer == null)

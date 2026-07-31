@@ -33,6 +33,9 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
     private Color[] originalColors;
     private Coroutine flashRoutine;
 
+    // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta.
+    public float HealthFraction => Mathf.Clamp01(1f - (float)hitsTaken / maxHits);
+
     [Header("Sparo")]
     [SerializeField] private GameObject projectilePrefab; // stesso prefab dell'onda sonora usato da PlayerShooting.projectilePrefab
     [Tooltip("Battiti al minuto: un'onda sparata da ogni cassa ad ogni battito, come PlayerShooting.")]
