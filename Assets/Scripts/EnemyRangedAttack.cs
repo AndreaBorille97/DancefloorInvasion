@@ -1,12 +1,12 @@
 using UnityEngine;
 
 // Da mettere sul prefab dello Sbirro a distanza (es. Sbirro3), al posto della coppia
-// EnemyChase + EnemyAttack: questo nemico non carica il bersaglio a contatto, insegue il
-// bersaglio più vicino tra Console/DJ e SoundSystem (o il Player, se entro
-// playerAggroRadius, o un Raver vivo se entro raverEngageDistance, con priorità assoluta
-// su tutto — vedi AcquireNearestTarget) solo finché non arriva a stopDistance, poi si
-// ferma e spara sfere paraboliche (vedi ParabolicProjectile) che infliggono un colpo come
-// uno Sbirro normale (IEnemyAttackTarget.TakeHit()).
+// EnemyChase + EnemyAttack: questo nemico non carica il bersaglio a contatto, insegue solo
+// il Player o un Raver vivo entro raverEngageDistance (con priorità assoluta su tutto, vedi
+// AcquireNearestTarget) — non punta mai Console/DJ o SoundSystem, a differenza degli Sbirro
+// melee/EnemyChase. Insegue finché non arriva a stopDistance, poi si ferma e lancia
+// fumogeni parabolici (vedi ParabolicProjectile/SbirroCloud): puramente di disturbo/area,
+// non infliggono alcun danno fisico.
 // Se il bersaglio si avvicina troppo (sotto retreatDistance) mentre sta sparando, dopo
 // retreatDelay secondi smette di attaccare e si allontana per riguadagnare stopDistance:
 // il ritardo evita che basti avvicinarsi di un passo per farlo scappare all'istante.
@@ -26,13 +26,11 @@ public class EnemyRangedAttack : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f; // velocità sia di avvicinamento sia di fuga
 
     [Header("Target")]
-    [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Console/DJ e SoundSystem, e ricontrolla la distanza dal Player.")]
+    [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Player e Raver.")]
     [SerializeField] private float retargetInterval = 0.5f;
-    [Tooltip("Se il Player entra entro questa distanza, diventa bersaglio prioritario rispetto a Console/DJ e SoundSystem: da provare/tarare in game.")]
-    [SerializeField] private float playerAggroRadius = 6f;
-    [Tooltip("Se un Raver (vivo, non a terra) è entro questa distanza, ha sempre priorità assoluta su tutto il resto (Player incluso): prima libera la strada, poi torna a puntare l'obiettivo. Ignorato se alwaysTargetPlayer è attivo.")]
+    [Tooltip("Se un Raver (vivo, non a terra) è entro questa distanza, ha sempre priorità assoluta sul Player: prima libera la strada, poi torna a puntare lui. Ignorato se alwaysTargetPlayer è attivo.")]
     [SerializeField] private float raverEngageDistance = 2f;
-    [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando Raver/Console/DJ/SoundSystem: usato dal Robosbirro. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
+    [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando i Raver: usato dal Robosbirro. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
     [SerializeField] private bool alwaysTargetPlayer = false;
 
     [Header("Distanza di tiro")]
@@ -221,25 +219,9 @@ public class EnemyRangedAttack : MonoBehaviour
             return;
         }
 
+        // Non punta mai Console/DJ o SoundSystem: bersaglia solo Player e Raver.
         Transform nearestRaver = FindNearestEngageableRaver();
-        if (nearestRaver != null)
-        {
-            target = nearestRaver;
-            return;
-        }
-
-        if (player != null)
-        {
-            float sqrDistanceToPlayer = (player.transform.position - transform.position).sqrMagnitude;
-            if (sqrDistanceToPlayer <= playerAggroRadius * playerAggroRadius)
-            {
-                target = player.transform;
-                return;
-            }
-        }
-
-        Transform nearestObjective = FindNearestObjective();
-        target = nearestObjective != null ? nearestObjective : player?.transform;
+        target = nearestRaver != null ? nearestRaver : player?.transform;
     }
 
     // Un Raver a terra (RaverHealth.IsDown, vedi rianimazione dal cono del Player) è inerte:
@@ -262,36 +244,6 @@ public class EnemyRangedAttack : MonoBehaviour
             if (sqrDistance <= sqrRaverEngageDistance && sqrDistance < nearestSqrDistance)
             {
                 nearest = raver.transform;
-                nearestSqrDistance = sqrDistance;
-            }
-        }
-
-        return nearest;
-    }
-
-    // Console/DJ e SoundSystem sono i due obiettivi che la polizia cerca di abbattere:
-    // stesso approccio component-based (non layer-based) già usato per i Raver altrove.
-    private Transform FindNearestObjective()
-    {
-        Transform nearest = null;
-        float nearestSqrDistance = float.MaxValue;
-
-        foreach (DJConsoleHealth console in FindObjectsByType<DJConsoleHealth>(FindObjectsSortMode.None))
-        {
-            float sqrDistance = (console.transform.position - transform.position).sqrMagnitude;
-            if (sqrDistance < nearestSqrDistance)
-            {
-                nearest = console.transform;
-                nearestSqrDistance = sqrDistance;
-            }
-        }
-
-        foreach (SoundSystem soundSystem in FindObjectsByType<SoundSystem>(FindObjectsSortMode.None))
-        {
-            float sqrDistance = (soundSystem.transform.position - transform.position).sqrMagnitude;
-            if (sqrDistance < nearestSqrDistance)
-            {
-                nearest = soundSystem.transform;
                 nearestSqrDistance = sqrDistance;
             }
         }

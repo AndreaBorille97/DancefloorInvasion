@@ -1,12 +1,14 @@
 using UnityEngine;
 
-// Da mettere sul prefab della sfera sparata da EnemyRangedAttack, con un Collider
-// impostato come Trigger (Is Trigger = true), stesso schema di CamperProjectile.
-// A differenza di CamperProjectile (che vola dritto lungo una direzione), qui il punto
-// di arrivo è fisso: Init() lo cattura al momento dello sparo, poi la sfera lo raggiunge
-// con una traiettoria ad arco (nessuna fisica, solo interpolazione), quindi è schivabile
-// spostandosi ma non deviabile dopo il lancio. Colpisce chi implementa IEnemyAttackTarget
-// (Player o Raver) infliggendo un colpo, come un attacco corpo a corpo di Sbirro.
+// Da mettere sul prefab della sfera lanciata da EnemyRangedAttack (fumogeno, non
+// infligge danno fisico), con un Collider impostato come Trigger (Is Trigger = true),
+// stesso schema di CamperProjectile. A differenza di CamperProjectile (che vola dritto
+// lungo una direzione), qui il punto di arrivo è fisso: Init() lo cattura al momento del
+// lancio, poi la sfera lo raggiunge con una traiettoria ad arco (nessuna fisica, solo
+// interpolazione), quindi è schivabile spostandosi ma non deviabile dopo il lancio.
+// A contatto con chi implementa IEnemyAttackTarget (Player o Raver), o comunque a fine
+// corsa se non colpisce nessuno, scoppia lasciando a terra una nuvola di fumo (vedi
+// SbirroCloud) puramente visiva.
 public class ParabolicProjectile : MonoBehaviour
 {
     [Header("Volo")]
@@ -61,13 +63,12 @@ public class ParabolicProjectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        IEnemyAttackTarget target = other.GetComponent<IEnemyAttackTarget>();
-        if (target == null)
+        if (other.GetComponent<IEnemyAttackTarget>() == null)
         {
             return;
         }
 
-        target.TakeHit();
+        // Nessun danno: scoppia a contatto lasciando solo la nuvola di fumo, come a fine corsa.
         SpawnCloud();
         Destroy(gameObject);
     }

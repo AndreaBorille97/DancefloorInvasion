@@ -1,45 +1,24 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 // Da mettere su un GameObject vuoto usato come prefab (vedi ParabolicProjectile.cloudPrefab).
-// È la nuvoletta che la sfera dello Sbirro lascia a terra quando finisce la sua corsa
-// (colpo diretto o atterraggio a vuoto): resta ferma per lifespan secondi, sfumando via
-// via, e infligge un colpo (come un attacco corpo a corpo di Sbirro, vedi IEnemyAttackTarget)
-// a chi la tocca — una sola volta per bersaglio, anche se ci resta dentro più a lungo.
-[RequireComponent(typeof(SphereCollider))]
+// È la nuvoletta di fumo che la sfera dello Sbirro lascia a terra quando finisce la sua corsa
+// (a contatto o ad atterraggio a vuoto): puramente visiva, non infligge alcun danno. Resta
+// ferma per lifespan secondi, sfumando via via, poi sparisce.
 public class SbirroCloud : MonoBehaviour
 {
     [Header("Durata")]
     [SerializeField] private float lifespan = 3f; // quanto resta a terra prima di sparire
 
     [Header("Aspetto")]
-    [SerializeField] private float radius = 2f; // raggio della nuvola, sia visivo sia del trigger
+    [SerializeField] private float radius = 2f; // raggio visivo della nuvola
     [SerializeField] private Color cloudColor = new Color(0.5f, 0.5f, 0.55f, 0.6f);
 
-    private readonly HashSet<Collider> alreadyHit = new HashSet<Collider>();
     private float elapsed;
     private Material visualMaterial;
 
     void Awake()
     {
-        SphereCollider trigger = GetComponent<SphereCollider>();
-        trigger.isTrigger = true;
-        trigger.radius = radius;
-
         CreateVisual();
-    }
-
-    // Tiene il collider sincronizzato con radius anche in editor (non solo a runtime via
-    // Awake): senza, modificando radius nell'Inspector il valore serializzato del
-    // SphereCollider resta quello vecchio finché non si va in Play, disallineando hitbox
-    // e raggio visivo nel frattempo (successo con SbirroNuvola: radius 1.5, m_Radius 2).
-    void OnValidate()
-    {
-        SphereCollider trigger = GetComponent<SphereCollider>();
-        if (trigger != null)
-        {
-            trigger.radius = radius;
-        }
     }
 
     void Update()
@@ -56,23 +35,6 @@ public class SbirroCloud : MonoBehaviour
         {
             Destroy(gameObject);
         }
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (alreadyHit.Contains(other))
-        {
-            return;
-        }
-
-        IEnemyAttackTarget target = other.GetComponent<IEnemyAttackTarget>();
-        if (target == null)
-        {
-            return;
-        }
-
-        alreadyHit.Add(other);
-        target.TakeHit();
     }
 
     // Genera una sfera appiattita e semitrasparente, senza bisogno di un mesh/materiale
