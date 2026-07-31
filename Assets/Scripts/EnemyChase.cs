@@ -4,9 +4,9 @@ using UnityEngine;
 // Il nemico insegue sul piano orizzontale (X/Z) il bersaglio più vicino tra Console/DJ
 // e SoundSystem (i due obiettivi da proteggere), ricalcolandolo periodicamente: se il
 // Player entra entro playerAggroRadius, diventa lui il bersaglio prioritario finché non
-// si allontana di nuovo. I Raver non sono mai un bersaglio scelto direttamente: quando
-// uno di loro si trova fisicamente sulla strada verso l'obiettivo, lo scontro parte comunque
-// da solo per collisione (RaverHealth implementa IEnemyAttackTarget, vedi EnemyAttack).
+// si allontana di nuovo. Priorità massima però a un Raver (vivo, non a terra) che si trova
+// entro raverEngageDistance: se è sulla strada, il nemico si ferma a ingaggiare lui prima
+// di proseguire verso l'obiettivo, invece di scavalcarlo ignorandolo.
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyChase : MonoBehaviour
 {
@@ -18,6 +18,8 @@ public class EnemyChase : MonoBehaviour
     [SerializeField] private float retargetInterval = 0.5f;
     [Tooltip("Se il Player entra entro questa distanza, diventa bersaglio prioritario rispetto a Console/DJ e SoundSystem: da provare/tarare in game.")]
     [SerializeField] private float playerAggroRadius = 6f;
+    [Tooltip("Se un Raver (vivo, non a terra) è entro questa distanza, ha sempre priorità assoluta su tutto il resto: prima libera la strada, poi torna a puntare l'obiettivo.")]
+    [SerializeField] private float raverEngageDistance = 2f;
 
     [Header("Fuga (boss morto)")]
     [Tooltip("Ogni quanti secondi cambia la direzione di fuga casuale mentre RoutState è attivo: valori bassi la fanno sembrare più erratica.")]
@@ -86,6 +88,13 @@ public class EnemyChase : MonoBehaviour
 
     private void AcquireNearestTarget()
     {
+        Transform nearestRaver = FindNearestEngageableRaver();
+        if (nearestRaver != null)
+        {
+            target = nearestRaver;
+            return;
+        }
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
 
         if (player != null)
@@ -100,6 +109,33 @@ public class EnemyChase : MonoBehaviour
 
         Transform nearestObjective = FindNearestObjective();
         target = nearestObjective != null ? nearestObjective : player?.transform;
+    }
+
+    // Un Raver a terra (RaverHealth.IsDown, vedi rianimazione dal cono del Player) è inerte:
+    // non viene considerato, il nemico lo ignora come bersaglio (anche se il suo collider
+    // può comunque bloccarlo fisicamente per puro ingombro).
+    private Transform FindNearestEngageableRaver()
+    {
+        Transform nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+        float sqrRaverEngageDistance = raverEngageDistance * raverEngageDistance;
+
+        foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
+        {
+            if (raver.IsDown)
+            {
+                continue;
+            }
+
+            float sqrDistance = (raver.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistance <= sqrRaverEngageDistance && sqrDistance < nearestSqrDistance)
+            {
+                nearest = raver.transform;
+                nearestSqrDistance = sqrDistance;
+            }
+        }
+
+        return nearest;
     }
 
     // Console/DJ e SoundSystem sono i due obiettivi che la polizia cerca di abbattere:

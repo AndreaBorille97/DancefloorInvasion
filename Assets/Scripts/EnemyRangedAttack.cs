@@ -1,10 +1,12 @@
 using UnityEngine;
 
 // Da mettere sul prefab dello Sbirro a distanza (es. Sbirro3), al posto della coppia
-// EnemyChase + EnemyAttack: questo nemico non carica il bersaglio a contatto, insegue
-// il Player o il Raver più vicino (stesso schema di EnemyChase) solo finché non arriva a
-// stopDistance, poi si ferma e spara sfere paraboliche (vedi ParabolicProjectile) che
-// infliggono un colpo come uno Sbirro normale (IEnemyAttackTarget.TakeHit()).
+// EnemyChase + EnemyAttack: questo nemico non carica il bersaglio a contatto, insegue il
+// bersaglio più vicino tra Console/DJ e SoundSystem (o il Player, se entro
+// playerAggroRadius, o un Raver vivo se entro raverEngageDistance, con priorità assoluta
+// su tutto — vedi AcquireNearestTarget) solo finché non arriva a stopDistance, poi si
+// ferma e spara sfere paraboliche (vedi ParabolicProjectile) che infliggono un colpo come
+// uno Sbirro normale (IEnemyAttackTarget.TakeHit()).
 // Se il bersaglio si avvicina troppo (sotto retreatDistance) mentre sta sparando, dopo
 // retreatDelay secondi smette di attaccare e si allontana per riguadagnare stopDistance:
 // il ritardo evita che basti avvicinarsi di un passo per farlo scappare all'istante.
@@ -28,7 +30,9 @@ public class EnemyRangedAttack : MonoBehaviour
     [SerializeField] private float retargetInterval = 0.5f;
     [Tooltip("Se il Player entra entro questa distanza, diventa bersaglio prioritario rispetto a Console/DJ e SoundSystem: da provare/tarare in game.")]
     [SerializeField] private float playerAggroRadius = 6f;
-    [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando Console/DJ e SoundSystem: usato dal Robosbirro. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
+    [Tooltip("Se un Raver (vivo, non a terra) è entro questa distanza, ha sempre priorità assoluta su tutto il resto (Player incluso): prima libera la strada, poi torna a puntare l'obiettivo. Ignorato se alwaysTargetPlayer è attivo.")]
+    [SerializeField] private float raverEngageDistance = 2f;
+    [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando Raver/Console/DJ/SoundSystem: usato dal Robosbirro. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
     [SerializeField] private bool alwaysTargetPlayer = false;
 
     [Header("Distanza di tiro")]
@@ -217,6 +221,13 @@ public class EnemyRangedAttack : MonoBehaviour
             return;
         }
 
+        Transform nearestRaver = FindNearestEngageableRaver();
+        if (nearestRaver != null)
+        {
+            target = nearestRaver;
+            return;
+        }
+
         if (player != null)
         {
             float sqrDistanceToPlayer = (player.transform.position - transform.position).sqrMagnitude;
@@ -229,6 +240,33 @@ public class EnemyRangedAttack : MonoBehaviour
 
         Transform nearestObjective = FindNearestObjective();
         target = nearestObjective != null ? nearestObjective : player?.transform;
+    }
+
+    // Un Raver a terra (RaverHealth.IsDown, vedi rianimazione dal cono del Player) è inerte:
+    // non viene considerato, il nemico lo ignora come bersaglio (anche se il suo collider
+    // può comunque bloccarlo fisicamente per puro ingombro).
+    private Transform FindNearestEngageableRaver()
+    {
+        Transform nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+        float sqrRaverEngageDistance = raverEngageDistance * raverEngageDistance;
+
+        foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
+        {
+            if (raver.IsDown)
+            {
+                continue;
+            }
+
+            float sqrDistance = (raver.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistance <= sqrRaverEngageDistance && sqrDistance < nearestSqrDistance)
+            {
+                nearest = raver.transform;
+                nearestSqrDistance = sqrDistance;
+            }
+        }
+
+        return nearest;
     }
 
     // Console/DJ e SoundSystem sono i due obiettivi che la polizia cerca di abbattere:
