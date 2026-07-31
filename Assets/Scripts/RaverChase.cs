@@ -2,13 +2,13 @@ using UnityEngine;
 
 // Da mettere sul prefab del Raver (posizionato a mano in scena, non più generato da uno
 // spawner/pickup dedicato), insieme a RaverAttack. Comportamento da guardia difensiva, non
-// da inseguitore: vaga leggermente attorno al punto in cui è stato posizionato
-// (guardPosition, catturato in Awake, vedi idleWanderRadius/idleWanderInterval) invece di
-// restare fermo come un blocco statico, e si attiva per caricare lo Sbirro più vicino solo
-// quando questo entra entro engageRadius da quel punto, ricalcolando periodicamente; appena
-// la minaccia sparisce o esce dal raggio, torna a vagare in posizione di guardia. Smette di
-// avvicinarsi entro minApproachDistance dal bersaglio, restando comunque a contatto: evita
-// di sfondarlo/compenetrarlo quando la velocità è alta (es. buff drug, vedi RaverDrugBuff).
+// da inseguitore: pattuglia in continuazione tra punti vicini attorno a dove è stato
+// posizionato (guardPosition, catturato in Awake, vedi patrolRadius) invece di restare fermo
+// come un blocco statico, e si attiva per caricare lo Sbirro più vicino solo quando questo
+// entra entro engageRadius da quel punto, ricalcolando periodicamente; appena la minaccia
+// sparisce o esce dal raggio, torna a pattugliare. Smette di avvicinarsi entro
+// minApproachDistance dal bersaglio, restando comunque a contatto: evita di
+// sfondarlo/compenetrarlo quando la velocità è alta (es. buff drug, vedi RaverDrugBuff).
 [RequireComponent(typeof(Rigidbody))]
 public class RaverChase : MonoBehaviour
 {
@@ -24,22 +24,24 @@ public class RaverChase : MonoBehaviour
     [Tooltip("Distanza minima dal bersaglio oltre la quale il Raver smette di avvicinarsi: deve restare (di poco) inferiore alla somma dei raggi dei collider, altrimenti il Raver non tocca più il bersaglio e RaverAttack (a contatto) non parte più. Tienilo vicino a quella somma (qui 1: 0.5 Raver + 0.5 Sbirro): una sovrapposizione più marcata costringe la fisica a correggerla ad ogni FixedUpdate, ed è quello scatto/stuttering che si vede a velocità elevata (es. buff drug).")]
     [SerializeField] private float minApproachDistance = 0.95f;
 
-    [Header("Movimento a riposo")]
-    [Tooltip("Raggio entro cui il Raver si sposta a caso attorno al punto di guardia quando non sta ingaggiando nessuno, per non restare fermo come un blocco statico.")]
-    [SerializeField] private float idleWanderRadius = 1.5f;
-    [Tooltip("Ogni quanti secondi (circa) sceglie un nuovo punto a caso attorno al punto di guardia.")]
-    [SerializeField] private float idleWanderInterval = 3f;
-    [Tooltip("Velocità di movimento mentre vaga a riposo: più lenta del passo da combattimento.")]
-    [SerializeField] private float idleMoveSpeed = 1f;
+    [Header("Pattuglia a riposo")]
+    [Tooltip("Raggio entro cui il Raver pattuglia attorno al punto di guardia quando non sta ingaggiando nessuno.")]
+    [SerializeField] private float patrolRadius = 3f;
+    [Tooltip("Distanza dal punto di pattuglia corrente sotto la quale è considerato raggiunto e ne viene scelto subito un altro: bassa apposta, così il Raver non si ferma mai del tutto (a differenza di minApproachDistance, pensato per il contatto in combattimento).")]
+    [SerializeField] private float patrolArrivalDistance = 0.3f;
+    [Tooltip("Tempo massimo su un punto di pattuglia prima di sceglierne comunque uno nuovo, nel caso resti bloccato contro un ostacolo e non lo raggiunga mai davvero.")]
+    [SerializeField] private float patrolMaxTimeOnPoint = 4f;
+    [Tooltip("Velocità di movimento in pattuglia: più lenta del passo da combattimento.")]
+    [SerializeField] private float patrolMoveSpeed = 1.2f;
 
     [Header("Modalità veicolo (Camper)")]
     [Tooltip("Quanto velocemente sterza mentre guida il Camper (gradi al secondo), invece di ruotare di scatto come normalmente: vedi SetVehicleMode.")]
     [SerializeField] private float vehicleTurnSpeed = 180f;
 
     private Rigidbody rb;
-    private Vector3 guardPosition; // punto a cui torna quando non c'è nessuna minaccia da ingaggiare, catturato in Awake
-    private Vector3 wanderTarget; // punto corrente del vagare a riposo, entro idleWanderRadius da guardPosition
-    private float wanderTimer;
+    private Vector3 guardPosition; // punto attorno a cui pattuglia quando non c'è nessuna minaccia da ingaggiare, catturato in Awake
+    private Vector3 patrolPoint; // punto di pattuglia corrente, entro patrolRadius da guardPosition
+    private float patrolPointTimer;
     private Transform target;
     private Transform forcedTarget; // se impostato, ignora l'AI normale e punta dritto qui (vedi SetForcedTarget)
     private float retargetTimer;
@@ -83,7 +85,7 @@ public class RaverChase : MonoBehaviour
         rb.constraints |= RigidbodyConstraints.FreezePositionY;
 
         guardPosition = transform.position;
-        wanderTarget = guardPosition;
+        PickNewPatrolPoint();
 
         AcquireNearestEnemy();
     }
@@ -101,24 +103,24 @@ public class RaverChase : MonoBehaviour
         }
 
         // A riposo (nessuna minaccia da ingaggiare, nessuna destinazione forzata dal Camper):
-        // vaga leggermente attorno al punto di guardia invece di restare fermo come un blocco
-        // statico, e lo fa al passo lento idleMoveSpeed invece del passo da combattimento.
+        // pattuglia in continuazione tra punti vicini invece di restare fermo come un blocco
+        // statico, al passo lento patrolMoveSpeed invece del passo da combattimento.
         bool isIdle = forcedTarget == null && target == null;
         if (isIdle)
         {
-            UpdateWander();
+            UpdatePatrol();
         }
 
         Vector3 destination = GetMoveDestination();
         Vector3 toTarget = destination - rb.position;
         toTarget.y = 0f;
 
-        Move(toTarget, isIdle ? idleMoveSpeed : moveSpeed);
+        Move(toTarget, isIdle ? patrolMoveSpeed : moveSpeed, isIdle ? patrolArrivalDistance : minApproachDistance);
         Rotate(toTarget);
     }
 
     // In ordine di priorità: destinazione forzata (il Camper da raggiungere) > Sbirro
-    // ingaggiato entro engageRadius da guardPosition > punto corrente del vagare a riposo.
+    // ingaggiato entro engageRadius da guardPosition > punto di pattuglia corrente.
     private Vector3 GetMoveDestination()
     {
         if (forcedTarget != null)
@@ -126,24 +128,31 @@ public class RaverChase : MonoBehaviour
             return forcedTarget.position;
         }
 
-        return target != null ? target.position : wanderTarget;
+        return target != null ? target.position : patrolPoint;
     }
 
-    // Sceglie un nuovo punto a caso entro idleWanderRadius da guardPosition ogni
-    // idleWanderInterval secondi circa: minApproachDistance in Move() ferma comunque il
-    // Raver poco prima di arrivarci, quindi il risultato è uno spostarsi leggero, non un
-    // vero e proprio girovagare.
-    private void UpdateWander()
+    // Appena il punto di pattuglia corrente è raggiunto (o dopo patrolMaxTimeOnPoint secondi,
+    // nel caso resti bloccato contro un ostacolo prima di arrivarci) ne sceglie subito un
+    // altro: è il ciclo continuo raggiungi-poi-scegli-il-prossimo che dà il senso di pattuglia,
+    // a differenza di un timer fisso che lascerebbe il Raver fermo tra un punto e l'altro.
+    private void UpdatePatrol()
     {
-        wanderTimer += Time.fixedDeltaTime;
-        if (wanderTimer < idleWanderInterval)
-        {
-            return;
-        }
+        patrolPointTimer += Time.fixedDeltaTime;
 
-        wanderTimer = 0f;
-        Vector2 offset = Random.insideUnitCircle * idleWanderRadius;
-        wanderTarget = guardPosition + new Vector3(offset.x, 0f, offset.y);
+        float sqrDistanceToPoint = (patrolPoint - transform.position).sqrMagnitude;
+        bool reachedPoint = sqrDistanceToPoint <= patrolArrivalDistance * patrolArrivalDistance;
+
+        if (reachedPoint || patrolPointTimer >= patrolMaxTimeOnPoint)
+        {
+            PickNewPatrolPoint();
+        }
+    }
+
+    private void PickNewPatrolPoint()
+    {
+        patrolPointTimer = 0f;
+        Vector2 offset = Random.insideUnitCircle * patrolRadius;
+        patrolPoint = guardPosition + new Vector3(offset.x, 0f, offset.y);
     }
 
     // Ricalcola lo Sbirro più vicino, ma solo se entro engageRadius da guardPosition:
@@ -167,12 +176,13 @@ public class RaverChase : MonoBehaviour
         target = nearest;
     }
 
-    private void Move(Vector3 toTarget, float speed)
+    private void Move(Vector3 toTarget, float speed, float stopDistance)
     {
-        if (toTarget.magnitude <= minApproachDistance)
+        if (toTarget.magnitude <= stopDistance)
         {
-            // Già abbastanza vicino da attaccare (i collider si toccano): non avanzare oltre,
-            // altrimenti a velocità elevata il Raver sfonda e compenetra il bersaglio.
+            // Già abbastanza vicino (a contatto in combattimento, o al punto di pattuglia
+            // corrente): non avanzare oltre, altrimenti a velocità elevata il Raver sfonda e
+            // compenetra il bersaglio.
             return;
         }
 
