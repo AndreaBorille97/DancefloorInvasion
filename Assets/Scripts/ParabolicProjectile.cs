@@ -1,14 +1,16 @@
 using UnityEngine;
 
-// Da mettere sul prefab della sfera lanciata da EnemyRangedAttack (fumogeno, non
-// infligge danno fisico), con un Collider impostato come Trigger (Is Trigger = true),
-// stesso schema di CamperProjectile. A differenza di CamperProjectile (che vola dritto
-// lungo una direzione), qui il punto di arrivo è fisso: Init() lo cattura al momento del
-// lancio, poi la sfera lo raggiunge con una traiettoria ad arco (nessuna fisica, solo
-// interpolazione), quindi è schivabile spostandosi ma non deviabile dopo il lancio.
-// A contatto con chi implementa IEnemyAttackTarget (Player o Raver), o comunque a fine
-// corsa se non colpisce nessuno, scoppia lasciando a terra una nuvola di fumo (vedi
-// SbirroCloud) puramente visiva.
+// Da mettere sul prefab della sfera lanciata da EnemyRangedAttack (fumogeno), con un
+// Collider impostato come Trigger (Is Trigger = true), stesso schema di CamperProjectile.
+// A differenza di CamperProjectile (che vola dritto lungo una direzione), qui il punto
+// di arrivo è fisso: Init() lo cattura al momento del lancio, poi la sfera lo raggiunge
+// con una traiettoria ad arco (nessuna fisica, solo interpolazione), quindi è schivabile
+// spostandosi ma non deviabile dopo il lancio. Colpisce Player e Raver infliggendo un
+// colpo (IEnemyAttackTarget.TakeHit(), come un attacco corpo a corpo di Sbirro), ma non fa
+// nulla a Console/DJ o SoundSystem (vedi EnemyRangedAttack: non li punta mai come bersaglio,
+// e qui li ignora comunque anche se li tocca per puro caso lungo la traiettoria). A contatto
+// con un bersaglio valido, o comunque a fine corsa se non colpisce nessuno, scoppia
+// lasciando a terra una nuvola di fumo (vedi SbirroCloud).
 public class ParabolicProjectile : MonoBehaviour
 {
     [Header("Volo")]
@@ -63,12 +65,21 @@ public class ParabolicProjectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.GetComponent<IEnemyAttackTarget>() == null)
+        // Console/DJ e SoundSystem vanno ignorati anche se il proiettile li tocca per
+        // caso lungo la traiettoria: il fumogeno non deve mai far danno a loro (vedi
+        // EnemyRangedAttack, che comunque non li punta mai come bersaglio).
+        if (other.GetComponent<DJConsoleHealth>() != null || other.GetComponent<SoundSystem>() != null)
         {
             return;
         }
 
-        // Nessun danno: scoppia a contatto lasciando solo la nuvola di fumo, come a fine corsa.
+        IEnemyAttackTarget target = other.GetComponent<IEnemyAttackTarget>();
+        if (target == null)
+        {
+            return;
+        }
+
+        target.TakeHit();
         SpawnCloud();
         Destroy(gameObject);
     }

@@ -5,8 +5,9 @@ using UnityEngine;
 // il Player o un Raver vivo entro raverEngageDistance (con priorità assoluta su tutto, vedi
 // AcquireNearestTarget) — non punta mai Console/DJ o SoundSystem, a differenza degli Sbirro
 // melee/EnemyChase. Insegue finché non arriva a stopDistance, poi si ferma e lancia
-// fumogeni parabolici (vedi ParabolicProjectile/SbirroCloud): puramente di disturbo/area,
-// non infliggono alcun danno fisico.
+// fumogeni parabolici (vedi ParabolicProjectile) che infliggono un colpo a Player e Raver
+// come un attacco corpo a corpo di Sbirro, ma ignorano del tutto Console/DJ e SoundSystem
+// anche se li tocca per caso lungo la traiettoria.
 // Se il bersaglio si avvicina troppo (sotto retreatDistance) mentre sta sparando, dopo
 // retreatDelay secondi smette di attaccare e si allontana per riguadagnare stopDistance:
 // il ritardo evita che basti avvicinarsi di un passo per farlo scappare all'istante.
