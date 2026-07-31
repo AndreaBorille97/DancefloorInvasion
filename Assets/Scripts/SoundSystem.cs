@@ -22,14 +22,15 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
     [SerializeField] private int maxHits = 8; // quanti colpi di Sbirro può subire prima di essere distrutto
 
     [Header("Feedback danno")]
-    [SerializeField] private Renderer targetRenderer; // se vuoto viene cercato su questo GameObject/figli
+    [Tooltip("Se vuoto vengono cercati tutti i Renderer nei figli (le 4 casse): lampeggiano tutte insieme, non solo una, altrimenti il colpo passa facilmente inosservato.")]
+    [SerializeField] private Renderer[] targetRenderers;
     [SerializeField] private Color flashColor = Color.red;
     [SerializeField] private float flashDuration = 0.15f; // durata del lampo di colore
 
     private int hitsTaken;
     private bool isDestroyed;
-    private Material material;
-    private Color originalColor;
+    private Material[] materials;
+    private Color[] originalColors;
     private Coroutine flashRoutine;
 
     [Header("Sparo")]
@@ -62,15 +63,17 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 
         musicBoost = FindAnyObjectByType<BackgroundMusicBoost>();
 
-        if (targetRenderer == null)
+        if (targetRenderers == null || targetRenderers.Length == 0)
         {
-            targetRenderer = GetComponentInChildren<Renderer>();
+            targetRenderers = GetComponentsInChildren<Renderer>();
         }
 
-        if (targetRenderer != null)
+        materials = new Material[targetRenderers.Length];
+        originalColors = new Color[targetRenderers.Length];
+        for (int i = 0; i < targetRenderers.Length; i++)
         {
-            material = targetRenderer.material; // istanza dedicata: non modifica l'asset condiviso
-            originalColor = material.color;
+            materials[i] = targetRenderers[i].material; // istanza dedicata: non modifica l'asset condiviso
+            originalColors[i] = materials[i].color;
         }
 
 #if UNITY_EDITOR
@@ -162,7 +165,7 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 
     private void PlayHitFlash()
     {
-        if (material == null)
+        if (materials == null || materials.Length == 0)
         {
             return;
         }
@@ -177,9 +180,17 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 
     private IEnumerator FlashRoutine()
     {
-        material.color = flashColor;
+        foreach (Material m in materials)
+        {
+            m.color = flashColor;
+        }
+
         yield return new WaitForSeconds(flashDuration);
-        material.color = originalColor;
+
+        for (int i = 0; i < materials.Length; i++)
+        {
+            materials[i].color = originalColors[i];
+        }
         flashRoutine = null;
     }
 }
