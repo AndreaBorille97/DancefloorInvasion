@@ -25,14 +25,14 @@ public class RaverChase : MonoBehaviour
     [SerializeField] private float minApproachDistance = 0.95f;
 
     [Header("Pattuglia a riposo")]
-    [Tooltip("Raggio entro cui il Raver pattuglia attorno al punto di guardia quando non sta ingaggiando nessuno.")]
-    [SerializeField] private float patrolRadius = 3f;
+    [Tooltip("Raggio entro cui il Raver pattuglia attorno al punto di guardia quando non sta ingaggiando nessuno: tienilo piccolo, deve dare l'idea di uno spostarsi sul posto, non di un giro ampio.")]
+    [SerializeField] private float patrolRadius = 1f;
     [Tooltip("Distanza dal punto di pattuglia corrente sotto la quale è considerato raggiunto e ne viene scelto subito un altro: bassa apposta, così il Raver non si ferma mai del tutto (a differenza di minApproachDistance, pensato per il contatto in combattimento).")]
     [SerializeField] private float patrolArrivalDistance = 0.3f;
     [Tooltip("Tempo massimo su un punto di pattuglia prima di sceglierne comunque uno nuovo, nel caso resti bloccato contro un ostacolo e non lo raggiunga mai davvero.")]
     [SerializeField] private float patrolMaxTimeOnPoint = 4f;
     [Tooltip("Velocità di movimento in pattuglia: più lenta del passo da combattimento.")]
-    [SerializeField] private float patrolMoveSpeed = 1.2f;
+    [SerializeField] private float patrolMoveSpeed = 0.7f;
 
     [Header("Modalità veicolo (Camper)")]
     [Tooltip("Quanto velocemente sterza mentre guida il Camper (gradi al secondo), invece di ruotare di scatto come normalmente: vedi SetVehicleMode.")]
