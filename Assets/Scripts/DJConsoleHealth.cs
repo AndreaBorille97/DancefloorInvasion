@@ -1,25 +1,22 @@
 using System.Collections;
 using UnityEngine;
 
-// Da mettere sul Player. Il Player muore al terzo colpo subito, a prescindere dal
-// danno del singolo attacco (non è un sistema a punti vita). Mostra anche un rapido
-// lampo di colore quando subisce un colpo: non c'è ancora un'animazione di hit,
-// questo basta a farlo percepire finché non verrà sostituito da quella vera.
-public class PlayerHealth : MonoBehaviour, IEnemyAttackTarget
+// Da mettere sul prefab della console/DJ in scena. Bersaglio prioritario della polizia
+// (vedi EnemyChase/EnemyRangedAttack), colpita a "colpi" esattamente come il Player
+// (IEnemyAttackTarget.TakeHit(), niente quantità di danno): la sua distruzione pone fine
+// alla partita in sconfitta (vedi GameOverState), come la morte del Player o del SoundSystem.
+public class DJConsoleHealth : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
-    [SerializeField] private int maxHits = 3; // quanti colpi può subire prima di morire
+    [SerializeField] private int maxHits = 10; // quanti colpi di Sbirro può subire prima di essere distrutta
 
     [Header("Feedback danno")]
     [SerializeField] private Renderer targetRenderer; // se vuoto viene cercato su questo GameObject/figli
     [SerializeField] private Color flashColor = Color.red;
     [SerializeField] private float flashDuration = 0.15f; // durata del lampo di colore
 
-    [Header("UI")]
-    [SerializeField] private FuelGaugeHUD hud; // barra vita (8 segmenti): se vuoto non aggiorna nulla
-
     private int hitsTaken;
-    private bool isDead;
+    private bool isDestroyed;
     private Material material;
     private Color originalColor;
     private Coroutine flashRoutine;
@@ -36,20 +33,17 @@ public class PlayerHealth : MonoBehaviour, IEnemyAttackTarget
             material = targetRenderer.material; // istanza dedicata: non modifica l'asset condiviso
             originalColor = material.color;
         }
-
-        UpdateHud();
     }
 
     public void TakeHit()
     {
-        if (isDead)
+        if (isDestroyed)
         {
             return;
         }
 
         hitsTaken++;
         PlayHitFlash();
-        UpdateHud();
 
         if (hitsTaken >= maxHits)
         {
@@ -57,32 +51,11 @@ public class PlayerHealth : MonoBehaviour, IEnemyAttackTarget
         }
     }
 
-    // Da chiamare da un powerup vita (vedi LifeUpPowerUpAmmoPickup): annulla un colpo subito,
-    // il massimo raggiungibile resta maxHits, cioè la vita con cui il Player parte.
-    public void AddLife(int amount)
-    {
-        if (isDead)
-        {
-            return;
-        }
-
-        hitsTaken = Mathf.Max(0, hitsTaken - amount);
-        UpdateHud();
-    }
-
     private void Die()
     {
-        isDead = true;
+        isDestroyed = true;
         GameOverState.Trigger();
         Destroy(gameObject);
-    }
-
-    private void UpdateHud()
-    {
-        if (hud != null)
-        {
-            hud.SetLife(maxHits - hitsTaken, maxHits);
-        }
     }
 
     private void PlayHitFlash()

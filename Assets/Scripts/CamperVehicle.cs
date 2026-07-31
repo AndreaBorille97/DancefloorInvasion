@@ -225,6 +225,14 @@ public class CamperVehicle : MonoBehaviour
 
         foreach (RaverChase raver in FindObjectsByType<RaverChase>(FindObjectsSortMode.None))
         {
+            // Un Raver a terra (in attesa di essere rianimato dal cono, vedi RaverHealth.IsDown)
+            // non può essere richiamato a pilotare il Camper.
+            RaverHealth health = raver.GetComponent<RaverHealth>();
+            if (health != null && health.IsDown)
+            {
+                continue;
+            }
+
             float sqrDistance = (raver.transform.position - transform.position).sqrMagnitude;
             if (sqrDistance < nearestSqrDistance)
             {

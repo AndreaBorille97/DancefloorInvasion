@@ -1,9 +1,12 @@
 using UnityEngine;
 
 // Da mettere sul prefab del nemico (lo stesso che spawna EnemySpawner).
-// Il nemico insegue sul piano orizzontale (X/Z) il bersaglio più vicino tra il Player
-// e ogni Raver in scena (vedi RaverHealth), ricalcolandolo periodicamente: se un Raver
-// gli si avvicina più del Player, il nemico cambia bersaglio e carica lui.
+// Il nemico insegue sul piano orizzontale (X/Z) il bersaglio più vicino tra Console/DJ
+// e SoundSystem (i due obiettivi da proteggere), ricalcolandolo periodicamente: se il
+// Player entra entro playerAggroRadius, diventa lui il bersaglio prioritario finché non
+// si allontana di nuovo. I Raver non sono mai un bersaglio scelto direttamente: quando
+// uno di loro si trova fisicamente sulla strada verso l'obiettivo, lo scontro parte comunque
+// da solo per collisione (RaverHealth implementa IEnemyAttackTarget, vedi EnemyAttack).
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyChase : MonoBehaviour
 {
@@ -11,8 +14,10 @@ public class EnemyChase : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f; // velocità di inseguimento (unità al secondo)
 
     [Header("Target")]
-    [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Player e Raver in scena.")]
+    [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Console/DJ e SoundSystem, e ricontrolla la distanza dal Player.")]
     [SerializeField] private float retargetInterval = 0.5f;
+    [Tooltip("Se il Player entra entro questa distanza, diventa bersaglio prioritario rispetto a Console/DJ e SoundSystem: da provare/tarare in game.")]
+    [SerializeField] private float playerAggroRadius = 6f;
 
     [Header("Fuga (boss morto)")]
     [Tooltip("Ogni quanti secondi cambia la direzione di fuga casuale mentre RoutState è attivo: valori bassi la fanno sembrare più erratica.")]
@@ -81,29 +86,50 @@ public class EnemyChase : MonoBehaviour
 
     private void AcquireNearestTarget()
     {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player != null)
+        {
+            float sqrDistanceToPlayer = (player.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistanceToPlayer <= playerAggroRadius * playerAggroRadius)
+            {
+                target = player.transform;
+                return;
+            }
+        }
+
+        Transform nearestObjective = FindNearestObjective();
+        target = nearestObjective != null ? nearestObjective : player?.transform;
+    }
+
+    // Console/DJ e SoundSystem sono i due obiettivi che la polizia cerca di abbattere:
+    // stesso approccio component-based (non layer-based) già usato per i Raver altrove.
+    private Transform FindNearestObjective()
+    {
         Transform nearest = null;
         float nearestSqrDistance = float.MaxValue;
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        foreach (DJConsoleHealth console in FindObjectsByType<DJConsoleHealth>(FindObjectsSortMode.None))
         {
-            nearest = player.transform;
-            nearestSqrDistance = (player.transform.position - transform.position).sqrMagnitude;
-        }
-
-        // Nessun tag/layer dedicato per i Raver: cerchiamo direttamente chi ha un RaverHealth,
-        // stesso approccio (component-based, non layer-based) già usato da CamperProjectile.
-        foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
-        {
-            float sqrDistance = (raver.transform.position - transform.position).sqrMagnitude;
+            float sqrDistance = (console.transform.position - transform.position).sqrMagnitude;
             if (sqrDistance < nearestSqrDistance)
             {
-                nearest = raver.transform;
+                nearest = console.transform;
                 nearestSqrDistance = sqrDistance;
             }
         }
 
-        target = nearest;
+        foreach (SoundSystem soundSystem in FindObjectsByType<SoundSystem>(FindObjectsSortMode.None))
+        {
+            float sqrDistance = (soundSystem.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistance < nearestSqrDistance)
+            {
+                nearest = soundSystem.transform;
+                nearestSqrDistance = sqrDistance;
+            }
+        }
+
+        return nearest;
     }
 
     private static Vector3 GetRandomDirection()

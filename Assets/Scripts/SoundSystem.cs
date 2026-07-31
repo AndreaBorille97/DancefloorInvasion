@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 // Da mettere sul GameObject "sound system" in scena (Assets/Prefabs/sound system.prefab),
@@ -10,8 +11,27 @@ using UnityEngine;
 // AreaSoundWavePowerUpPickup.bonusConeAngle e DeepSoundWavePowerUpPickup.bonusMaxRadius
 // (sommati alla base di SoundWave.prefab: coneAngle 60, maxRadius 12), non più allineati:
 // il buff extra è voluto solo per il sound system, non per il Player.
-public class SoundSystem : MonoBehaviour
+//
+// Bersaglio prioritario della polizia (vedi EnemyChase/EnemyRangedAttack): ha una vita
+// propria, colpita a "colpi" come il Player (IEnemyAttackTarget.TakeHit()); la sua
+// distruzione pone fine alla partita in sconfitta (vedi GameOverState), come la morte
+// del Player o della Console/DJ.
+public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 {
+    [Header("Vita")]
+    [SerializeField] private int maxHits = 8; // quanti colpi di Sbirro può subire prima di essere distrutto
+
+    [Header("Feedback danno")]
+    [SerializeField] private Renderer targetRenderer; // se vuoto viene cercato su questo GameObject/figli
+    [SerializeField] private Color flashColor = Color.red;
+    [SerializeField] private float flashDuration = 0.15f; // durata del lampo di colore
+
+    private int hitsTaken;
+    private bool isDestroyed;
+    private Material material;
+    private Color originalColor;
+    private Coroutine flashRoutine;
+
     [Header("Sparo")]
     [SerializeField] private GameObject projectilePrefab; // stesso prefab dell'onda sonora usato da PlayerShooting.projectilePrefab
     [Tooltip("Battiti al minuto: un'onda sparata da ogni cassa ad ogni battito, come PlayerShooting.")]
@@ -41,6 +61,17 @@ public class SoundSystem : MonoBehaviour
         }
 
         musicBoost = FindAnyObjectByType<BackgroundMusicBoost>();
+
+        if (targetRenderer == null)
+        {
+            targetRenderer = GetComponentInChildren<Renderer>();
+        }
+
+        if (targetRenderer != null)
+        {
+            material = targetRenderer.material; // istanza dedicata: non modifica l'asset condiviso
+            originalColor = material.color;
+        }
 
 #if UNITY_EDITOR
         // Stesso errore comune di PlayerShooting.projectilePrefab: trascinare l'oggetto
@@ -104,5 +135,51 @@ public class SoundSystem : MonoBehaviour
             GameObject projectile = Instantiate(projectilePrefab, crate.position, crate.rotation);
             projectile.GetComponent<SoundWaveProjectile>()?.ApplyPowerUps(bonusConeAngle, bonusMaxRadius);
         }
+    }
+
+    public void TakeHit()
+    {
+        if (isDestroyed)
+        {
+            return;
+        }
+
+        hitsTaken++;
+        PlayHitFlash();
+
+        if (hitsTaken >= maxHits)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        isDestroyed = true;
+        GameOverState.Trigger();
+        Destroy(gameObject);
+    }
+
+    private void PlayHitFlash()
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        if (flashRoutine != null)
+        {
+            StopCoroutine(flashRoutine);
+        }
+
+        flashRoutine = StartCoroutine(FlashRoutine());
+    }
+
+    private IEnumerator FlashRoutine()
+    {
+        material.color = flashColor;
+        yield return new WaitForSeconds(flashDuration);
+        material.color = originalColor;
+        flashRoutine = null;
     }
 }

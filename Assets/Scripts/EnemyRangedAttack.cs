@@ -24,9 +24,11 @@ public class EnemyRangedAttack : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f; // velocità sia di avvicinamento sia di fuga
 
     [Header("Target")]
-    [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Player e Raver in scena.")]
+    [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Console/DJ e SoundSystem, e ricontrolla la distanza dal Player.")]
     [SerializeField] private float retargetInterval = 0.5f;
-    [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando i Raver: usato dal Robosbirro perché altrimenti si ancora al Raver più vicino (spesso fermo ai bordi della mappa) invece di dare la caccia al Player. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
+    [Tooltip("Se il Player entra entro questa distanza, diventa bersaglio prioritario rispetto a Console/DJ e SoundSystem: da provare/tarare in game.")]
+    [SerializeField] private float playerAggroRadius = 6f;
+    [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando Console/DJ e SoundSystem: usato dal Robosbirro. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
     [SerializeField] private bool alwaysTargetPlayer = false;
 
     [Header("Distanza di tiro")]
@@ -207,33 +209,56 @@ public class EnemyRangedAttack : MonoBehaviour
 
     private void AcquireNearestTarget()
     {
-        Transform nearest = null;
-        float nearestSqrDistance = float.MaxValue;
-
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            nearest = player.transform;
-            nearestSqrDistance = (player.transform.position - transform.position).sqrMagnitude;
-        }
 
         if (alwaysTargetPlayer)
         {
-            target = nearest;
+            target = player?.transform;
             return;
         }
 
-        foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
+        if (player != null)
         {
-            float sqrDistance = (raver.transform.position - transform.position).sqrMagnitude;
+            float sqrDistanceToPlayer = (player.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistanceToPlayer <= playerAggroRadius * playerAggroRadius)
+            {
+                target = player.transform;
+                return;
+            }
+        }
+
+        Transform nearestObjective = FindNearestObjective();
+        target = nearestObjective != null ? nearestObjective : player?.transform;
+    }
+
+    // Console/DJ e SoundSystem sono i due obiettivi che la polizia cerca di abbattere:
+    // stesso approccio component-based (non layer-based) già usato per i Raver altrove.
+    private Transform FindNearestObjective()
+    {
+        Transform nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+
+        foreach (DJConsoleHealth console in FindObjectsByType<DJConsoleHealth>(FindObjectsSortMode.None))
+        {
+            float sqrDistance = (console.transform.position - transform.position).sqrMagnitude;
             if (sqrDistance < nearestSqrDistance)
             {
-                nearest = raver.transform;
+                nearest = console.transform;
                 nearestSqrDistance = sqrDistance;
             }
         }
 
-        target = nearest;
+        foreach (SoundSystem soundSystem in FindObjectsByType<SoundSystem>(FindObjectsSortMode.None))
+        {
+            float sqrDistance = (soundSystem.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistance < nearestSqrDistance)
+            {
+                nearest = soundSystem.transform;
+                nearestSqrDistance = sqrDistance;
+            }
+        }
+
+        return nearest;
     }
 
     private int CountNearbyRavers()
