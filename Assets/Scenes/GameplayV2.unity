@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -358,6 +358,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 149502618}
   m_CullTransparentMesh: 1
+--- !u!114 &218482718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 874164731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.85}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!224 &219377391
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 875491744}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 896528369}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 800, y: 150}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &234459070
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -494,22 +543,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 305468278}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &500000000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 305468278}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c9350e5813c9cf4791628b0bdaf4c23, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::DJConsoleHealth
-  maxHits: 10
-  targetRenderer: {fileID: 0}
-  flashColor: {r: 1, g: 0, b: 0, a: 1}
-  flashDuration: 0.15
 --- !u!4 &305468282
 Transform:
   m_ObjectHideFlags: 0
@@ -525,6 +558,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!222 &310672191
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 874164731}
+  m_CullTransparentMesh: 1
 --- !u!1 &316180843
 GameObject:
   m_ObjectHideFlags: 0
@@ -1232,6 +1273,22 @@ MonoBehaviour:
   floor: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
   maxSpawnInterval: 1
   spawnHeight: 0.5
+--- !u!114 &500000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 305468278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c9350e5813c9cf4791628b0bdaf4c23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DJConsoleHealth
+  maxHits: 10
+  targetRenderer: {fileID: 0}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.15
 --- !u!1001 &560462155
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1258,7 +1315,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -25.96
+      value: -19.99
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1266,7 +1323,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -27.67
+      value: -12.78
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1569,6 +1626,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!222 &667704891
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 875491744}
+  m_CullTransparentMesh: 1
 --- !u!1 &672159845
 GameObject:
   m_ObjectHideFlags: 0
@@ -1787,6 +1852,40 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &787619988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 875491744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FontData:
+    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_FontSize: 56
+    m_FontStyle: 0
+    m_BestFit: 0
+    m_MinSize: 10
+    m_MaxSize: 80
+    m_Alignment: 4
+    m_AlignByGeometry: 0
+    m_RichText: 1
+    m_HorizontalOverflow: 0
+    m_VerticalOverflow: 0
+    m_LineSpacing: 1
+  m_Text: GAME OVER
 --- !u!1 &794590623
 GameObject:
   m_ObjectHideFlags: 0
@@ -1891,6 +1990,62 @@ RectTransform:
   m_AnchoredPosition: {x: 102.79997, y: 62.200016}
   m_SizeDelta: {x: 15, y: 13}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &874164731
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 896528369}
+  - component: {fileID: 218482718}
+  - component: {fileID: 310672191}
+  m_Layer: 5
+  m_Name: GameOverPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!1 &875491744
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 219377391}
+  - component: {fileID: 787619988}
+  - component: {fileID: 667704891}
+  m_Layer: 5
+  m_Name: GameOverLabel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &896528369
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 874164731}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 219377391}
+  m_Father: {fileID: 1947152642}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &914283042
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1948,7 +2103,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -28.2
+      value: -20.6
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2073,6 +2228,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &989797047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 585168186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe4dab3838f94c546a11fbe087c97f95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
+  gameOverPanel: {fileID: 874164731}
 --- !u!1 &999771257
 GameObject:
   m_ObjectHideFlags: 0
@@ -2267,7 +2435,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 29.7
+      value: 21.4
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2275,7 +2443,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 13.5
+      value: 11.44
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3221,7 +3389,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 30.7
+      value: 21.48
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3229,7 +3397,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -29.7
+      value: -15.33
       objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3282,15 +3450,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalScale.x
-      value: 64.6831
+      value: 46.38813
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalScale.y
-      value: -2.6275566
+      value: -1.8843784
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalScale.z
-      value: 64.6831
+      value: 46.38813
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3298,11 +3466,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.42296
+      value: 0.26237
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.5
+      value: 5.6
       objectReference: {fileID: 0}
     - target: {fileID: 4503072743269769650, guid: e017915daae26cc46be20c7480c9e2f2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3499,7 +3667,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4922254978225925088, guid: 8037cb7f7c8e1004ca284a881fa4631d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.57
+      value: -8.6
       objectReference: {fileID: 0}
     - target: {fileID: 4922254978225925088, guid: 8037cb7f7c8e1004ca284a881fa4631d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3507,7 +3675,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4922254978225925088, guid: 8037cb7f7c8e1004ca284a881fa4631d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 27.85
+      value: 24.4
       objectReference: {fileID: 0}
     - target: {fileID: 4922254978225925088, guid: 8037cb7f7c8e1004ca284a881fa4631d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3579,171 +3747,2323 @@ SceneRoots:
   - {fileID: 701599093}
   - {fileID: 1714058793}
   - {fileID: 305468282}
---- !u!1 &874164731
-GameObject:
+  - {fileID: 1136368168}
+  - {fileID: 331517470}
+  - {fileID: 1277186724}
+  - {fileID: 256595681}
+  - {fileID: 1167243121}
+  - {fileID: 562026582}
+  - {fileID: 1644438913}
+  - {fileID: 1732618952}
+  - {fileID: 362685178}
+  - {fileID: 1987492318}
+  - {fileID: 1526458358}
+  - {fileID: 1471456178}
+  - {fileID: 586694260}
+  - {fileID: 63302787}
+  - {fileID: 312732718}
+  - {fileID: 318564537}
+  - {fileID: 1462683201}
+  - {fileID: 1776223516}
+  - {fileID: 978800913}
+  - {fileID: 327861166}
+  - {fileID: 520370535}
+  - {fileID: 1012789455}
+  - {fileID: 542192810}
+  - {fileID: 1272507218}
+  - {fileID: 1931090951}
+  - {fileID: 836090031}
+  - {fileID: 1392975015}
+  - {fileID: 19344309}
+  - {fileID: 1689573165}
+  - {fileID: 1531391734}
+  - {fileID: 1016974819}
+  - {fileID: 1933756040}
+  - {fileID: 1568425501}
+  - {fileID: 1946945918}
+  - {fileID: 460810789}
+  - {fileID: 542686747}
+  - {fileID: 103284998}
+  - {fileID: 2096262353}
+  - {fileID: 100125809}
+  - {fileID: 1566531889}
+--- !u!1001 &881195447
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 896528369}
-  - component: {fileID: 218482718}
-  - component: {fileID: 310672191}
-  m_Layer: 5
-  m_Name: GameOverPanel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &896528369
-RectTransform:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.07
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -11.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &341793189
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 874164731}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 219377391}
-  m_Father: {fileID: 1947152642}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &218482718
-MonoBehaviour:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6.70292387221365
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.9823725421879
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &885845209
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 874164731}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.85}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &310672191
-CanvasRenderer:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.63762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -6.89161060780645
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &977806490
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 874164731}
-  m_CullTransparentMesh: 1
---- !u!1 &875491744
-GameObject:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.97838939219355
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5.23237254218789
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &309307130
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 219377391}
-  - component: {fileID: 787619988}
-  - component: {fileID: 667704891}
-  m_Layer: 5
-  m_Name: GameOverLabel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &219377391
-RectTransform:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.88762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.16707612778635
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &182394751
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 875491744}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 896528369}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 800, y: 150}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &787619988
-MonoBehaviour:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.43
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -3.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &818346704
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 875491744}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 56
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 80
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: GAME OVER
---- !u!222 &667704891
-CanvasRenderer:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.74762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.16707612778635
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &580032252
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 875491744}
-  m_CullTransparentMesh: 1
---- !u!114 &989797047
-MonoBehaviour:
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.83838939219355
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5.23237254218789
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &934337274
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 585168186}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe4dab3838f94c546a11fbe087c97f95, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
-  gameOverPanel: {fileID: 874164731}
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.49762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -6.89161060780645
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &185656630
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.56292387221365
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.98237254218789
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &396960446
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.93
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -11.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &393985462
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.56292387221365
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -13.6176274578121
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &546378750
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.49762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -15.7083893921935
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &169142121
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.83838939219355
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -17.3676274578121
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &191403231
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.74762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -18.4329238722137
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &341087872
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.430000000000001
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -18.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &169546927
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.8876274578121
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -18.4329238722137
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &657203102
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 17
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.97838939219355
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -17.3676274578121
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &133711986
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.63762745781211
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -15.7083893921936
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &127462118
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard Console 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6.70292387221365
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -13.6176274578121
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &614210863
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -20.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &185901733
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -19.3368421052632
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &809157697
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -18.0736842105263
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &233364152
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 23
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -16.8105263157895
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &308641795
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 24
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -15.5473684210526
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &358369150
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -14.2842105263158
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &548182482
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 26
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.0210526315789
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &590072471
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 27
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -11.7578947368421
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &467444994
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 28
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -10.4947368421053
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &196452045
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -9.23157894736842
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &981300972
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.96842105263158
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &844274562
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 31
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.70526315789474
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &186586311
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 32
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -5.44210526315789
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &967485599
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 33
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.17894736842105
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &793090555
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 34
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.91578947368421
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &674315400
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.65263157894737
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &709524455
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 36
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.389473684210527
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &248050756
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 37
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.873684210526315
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &280219147
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.13684210526316
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+--- !u!1001 &739482509
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_Name
+      value: Raver Guard SoundSystem 39
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8275153661487945437, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
