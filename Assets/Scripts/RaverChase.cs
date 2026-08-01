@@ -19,9 +19,9 @@ public class RaverChase : MonoBehaviour
     [Tooltip("Ogni quanti secondi ricalcola lo Sbirro più vicino entro engageRadius da guardPosition.")]
     [SerializeField] private float retargetInterval = 0.5f;
     [Tooltip("Raggio di allerta attorno al punto di guardia: un Raver ingaggia solo gli Sbirro che entrano qui dentro. Tienilo piccolo apposta (il Raver deve scattare solo quando lo Sbirro è molto vicino, non rincorrerlo da lontano).")]
-    [SerializeField] private float engageRadius = 2.5f;
+    [SerializeField] private float engageRadius = 1.5f;
     [Tooltip("Se il Raver stesso (non lo Sbirro inseguito) supera questa distanza dal punto di guardia, molla l'inseguimento all'istante e torna a pattugliare: il presidio dell'obiettivo protetto ha sempre la priorità, anche se lo Sbirro nel frattempo si muove restando 'appena dentro' engageRadius. Tienilo di poco superiore a engageRadius.")]
-    [SerializeField] private float maxLeashFromGuard = 3f;
+    [SerializeField] private float maxLeashFromGuard = 2f;
 
     [Tooltip("Distanza minima dal bersaglio oltre la quale il Raver smette di avvicinarsi: deve restare (di poco) inferiore alla somma dei raggi dei collider, altrimenti il Raver non tocca più il bersaglio e RaverAttack (a contatto) non parte più. Tienilo vicino a quella somma (qui 1: 0.5 Raver + 0.5 Sbirro): una sovrapposizione più marcata costringe la fisica a correggerla ad ogni FixedUpdate, ed è quello scatto/stuttering che si vede a velocità elevata (es. buff drug).")]
     [SerializeField] private float minApproachDistance = 0.95f;
