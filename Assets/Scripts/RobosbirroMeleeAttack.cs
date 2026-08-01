@@ -64,7 +64,7 @@ public class RobosbirroMeleeAttack : MonoBehaviour
             return;
         }
 
-        if (other.GetComponent<IEnemyAttackTarget>() == null)
+        if (other.GetComponentInParent<IEnemyAttackTarget>() == null)
         {
             return;
         }
@@ -83,7 +83,7 @@ public class RobosbirroMeleeAttack : MonoBehaviour
         Collider[] hits = Physics.OverlapSphere(transform.position, attackRadius);
         foreach (Collider hit in hits)
         {
-            IEnemyAttackTarget target = hit.GetComponent<IEnemyAttackTarget>();
+            IEnemyAttackTarget target = hit.GetComponentInParent<IEnemyAttackTarget>();
             if (target == null)
             {
                 continue;

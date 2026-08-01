@@ -2,12 +2,15 @@ using System.Collections;
 using UnityEngine;
 
 // Da mettere sul prefab del nemico, insieme a EnemyChase.
-// Quando il nemico tocca un bersaglio attaccabile (Player o Raver, vedi
-// IEnemyAttackTarget) parte una "carica" di un secondo: se il bersaglio resta a
-// contatto per tutta la carica subisce il colpo, se si allontana prima che scada lo
-// evita. Gestito interamente a livello di collider fisico (OnCollisionEnter/Stay/Exit)
-// grazie ai Rigidbody già presenti sui GameObject coinvolti, niente OverlapSphere o
-// controlli a distanza.
+// Quando il nemico tocca un bersaglio attaccabile (Player, Raver, Console/DJ o
+// SoundSystem, vedi IEnemyAttackTarget) parte una "carica" di un secondo: se il
+// bersaglio resta a contatto per tutta la carica subisce il colpo, se si allontana
+// prima che scada lo evita. Gestito interamente a livello di collider fisico
+// (OnCollisionEnter/Stay/Exit) grazie ai Rigidbody già presenti sui GameObject
+// coinvolti, niente OverlapSphere o controlli a distanza. Cerca IEnemyAttackTarget
+// anche nei genitori del collider colpito (GetComponentInParent), non solo sull'oggetto
+// esatto: il SoundSystem ad esempio ha il collider sulle casse figlie ("muro1..muro4"),
+// non sul GameObject radice dove sta lo script.
 public class EnemyAttack : MonoBehaviour
 {
     [Header("Attacco")]
@@ -33,7 +36,7 @@ public class EnemyAttack : MonoBehaviour
 
     void OnCollisionExit(Collision collision)
     {
-        IEnemyAttackTarget target = collision.collider.GetComponent<IEnemyAttackTarget>();
+        IEnemyAttackTarget target = collision.collider.GetComponentInParent<IEnemyAttackTarget>();
         if (target == null || target != currentTarget)
         {
             return;
@@ -52,7 +55,7 @@ public class EnemyAttack : MonoBehaviour
             return; // carica già in corso, o in pausa dopo l'ultimo colpo
         }
 
-        IEnemyAttackTarget target = other.GetComponent<IEnemyAttackTarget>();
+        IEnemyAttackTarget target = other.GetComponentInParent<IEnemyAttackTarget>();
         if (target == null)
         {
             return;

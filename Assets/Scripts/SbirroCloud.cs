@@ -67,12 +67,12 @@ public class SbirroCloud : MonoBehaviour
             return;
         }
 
-        if (other.GetComponent<DJConsoleHealth>() != null || other.GetComponent<SoundSystem>() != null)
+        if (other.GetComponentInParent<DJConsoleHealth>() != null || other.GetComponentInParent<SoundSystem>() != null)
         {
             return;
         }
 
-        IEnemyAttackTarget target = other.GetComponent<IEnemyAttackTarget>();
+        IEnemyAttackTarget target = other.GetComponentInParent<IEnemyAttackTarget>();
         if (target == null)
         {
             return;

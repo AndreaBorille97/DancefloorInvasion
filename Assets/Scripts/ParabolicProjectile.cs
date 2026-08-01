@@ -68,12 +68,12 @@ public class ParabolicProjectile : MonoBehaviour
         // Console/DJ e SoundSystem vanno ignorati anche se il proiettile li tocca per
         // caso lungo la traiettoria: il fumogeno non deve mai far danno a loro (vedi
         // EnemyRangedAttack, che comunque non li punta mai come bersaglio).
-        if (other.GetComponent<DJConsoleHealth>() != null || other.GetComponent<SoundSystem>() != null)
+        if (other.GetComponentInParent<DJConsoleHealth>() != null || other.GetComponentInParent<SoundSystem>() != null)
         {
             return;
         }
 
-        IEnemyAttackTarget target = other.GetComponent<IEnemyAttackTarget>();
+        IEnemyAttackTarget target = other.GetComponentInParent<IEnemyAttackTarget>();
         if (target == null)
         {
             return;
