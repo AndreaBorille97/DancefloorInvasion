@@ -35,6 +35,8 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 
     // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta.
     public float HealthFraction => Mathf.Clamp01(1f - (float)hitsTaken / maxHits);
+    public int RemainingHits => Mathf.Max(0, maxHits - hitsTaken);
+    public int MaxHits => maxHits;
 
     [Header("Sparo")]
     [SerializeField] private GameObject projectilePrefab; // stesso prefab dell'onda sonora usato da PlayerShooting.projectilePrefab

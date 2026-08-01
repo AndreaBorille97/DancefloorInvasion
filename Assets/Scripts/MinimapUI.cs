@@ -10,7 +10,9 @@ using UnityEngine.UI;
 // colorato per ciascuno di Player, Console/DJ, SoundSystem, ogni Raver ed ogni Sbirro,
 // letti a intervalli regolari (refreshInterval), non ogni frame. Console/DJ, SoundSystem
 // e i Raver mostrano anche quanta vita resta: i primi due scalando la dimensione del
-// punto in base a HealthFraction, i Raver diventando grigi quando sono a terra.
+// punto in base a HealthFraction, i Raver diventando grigi quando sono a terra. Sopra il
+// riquadro, un pannello con due contatori testuali ("Console: X/Y", "SoundSystem: X/Y")
+// mostra i colpi rimasti prima della distruzione (vedi RemainingHits/MaxHits).
 public class MinimapUI : MonoBehaviour
 {
     [Header("Aggiornamento")]
@@ -35,6 +37,13 @@ public class MinimapUI : MonoBehaviour
     [SerializeField] private float raverDotSize = 6f;
     [SerializeField] private float sbirroDotSize = 6f;
 
+    [Header("Contatori vita Console/SoundSystem")]
+    [Tooltip("Pannello con i due contatori testuali (\"Console: X/Y\", \"SoundSystem: X/Y\"), posizionato appena sopra il riquadro della minimappa.")]
+    [SerializeField] private float counterPanelHeight = 44f;
+    [SerializeField] private float counterPanelSpacing = 4f; // spazio tra il riquadro della minimappa e il pannello contatori sopra
+    [SerializeField] private int counterFontSize = 14;
+    [SerializeField] private Color counterTextColor = Color.white;
+
     private RectTransform rectTransform;
     private float timer;
 
@@ -43,6 +52,8 @@ public class MinimapUI : MonoBehaviour
     private Image soundSystemIcon;
     private readonly List<Image> raverIcons = new List<Image>();
     private readonly List<Image> sbirroIcons = new List<Image>();
+    private Text consoleCounter;
+    private Text soundSystemCounter;
 
     void Awake()
     {
@@ -52,6 +63,7 @@ public class MinimapUI : MonoBehaviour
         playerIcon = CreateIcon("Player", playerColor);
         consoleIcon = CreateIcon("Console", consoleColor);
         soundSystemIcon = CreateIcon("SoundSystem", soundSystemColor);
+        CreateHealthCounters();
     }
 
     void Update()
@@ -81,10 +93,12 @@ public class MinimapUI : MonoBehaviour
         DJConsoleHealth console = FindAnyObjectByType<DJConsoleHealth>();
         UpdateSingleIcon(consoleIcon, console != null ? console.transform : null, bounds,
             console != null ? Mathf.Lerp(objectiveDotSize * 0.4f, objectiveDotSize, console.HealthFraction) : objectiveDotSize);
+        consoleCounter.text = console != null ? $"Console: {console.RemainingHits}/{console.MaxHits}" : "Console: --";
 
         SoundSystem soundSystem = FindAnyObjectByType<SoundSystem>();
         UpdateSingleIcon(soundSystemIcon, soundSystem != null ? soundSystem.transform : null, bounds,
             soundSystem != null ? Mathf.Lerp(objectiveDotSize * 0.4f, objectiveDotSize, soundSystem.HealthFraction) : objectiveDotSize);
+        soundSystemCounter.text = soundSystem != null ? $"SoundSystem: {soundSystem.RemainingHits}/{soundSystem.MaxHits}" : "SoundSystem: --";
 
         RefreshGroup(FindObjectsByType<RaverHealth>(FindObjectsSortMode.None), raverIcons, "Raver", bounds,
             (raver, icon) =>
@@ -186,5 +200,54 @@ public class MinimapUI : MonoBehaviour
         iconRect.pivot = new Vector2(0.5f, 0.5f);
 
         return icon;
+    }
+
+    // Pannello con i due contatori, appena sopra il riquadro della minimappa (fuori dal suo
+    // stesso sfondo, che copre solo l'area 0..rect.height): stesso sfondo scuro semitrasparente
+    // della minimappa, per leggibilità sopra qualunque cosa ci sia dietro in game.
+    private void CreateHealthCounters()
+    {
+        float boxTop = rectTransform.rect.height * 0.5f;
+        float panelCenterY = boxTop + counterPanelSpacing + counterPanelHeight * 0.5f;
+
+        GameObject panelObject = new GameObject("HealthCountersBackground", typeof(RectTransform), typeof(Image));
+        panelObject.transform.SetParent(rectTransform, false);
+
+        Image panelImage = panelObject.GetComponent<Image>();
+        panelImage.color = backgroundColor;
+        panelImage.raycastTarget = false;
+
+        RectTransform panelRect = panelImage.rectTransform;
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(rectTransform.rect.width, counterPanelHeight);
+        panelRect.anchoredPosition = new Vector2(0f, panelCenterY);
+
+        float rowHeight = counterPanelHeight * 0.5f;
+        consoleCounter = CreateCounterLabel("ConsoleCounter", panelCenterY + rowHeight * 0.5f, rowHeight);
+        soundSystemCounter = CreateCounterLabel("SoundSystemCounter", panelCenterY - rowHeight * 0.5f, rowHeight);
+    }
+
+    private Text CreateCounterLabel(string name, float y, float rowHeight)
+    {
+        GameObject labelObject = new GameObject(name, typeof(RectTransform), typeof(Text));
+        labelObject.transform.SetParent(rectTransform, false);
+
+        Text label = labelObject.GetComponent<Text>();
+        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.fontSize = counterFontSize;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = counterTextColor;
+        label.raycastTarget = false;
+
+        RectTransform labelRect = label.rectTransform;
+        labelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        labelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        labelRect.pivot = new Vector2(0.5f, 0.5f);
+        labelRect.sizeDelta = new Vector2(rectTransform.rect.width - 8f, rowHeight);
+        labelRect.anchoredPosition = new Vector2(0f, y);
+
+        return label;
     }
 }
