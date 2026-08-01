@@ -146,11 +146,17 @@ public class CamperVehicle : MonoBehaviour
         watcher.Init(this);
     }
 
-    // Chiamato da CamperPilotWatcher quando il Raver assegnato muore ucciso da un nemico
-    // (in avvicinamento o a bordo): il Camper resta fermo dov'è (nessun teletrasporto al
-    // punto di partenza) e la benzina resta al livello raggiunto, pronto per il prossimo Raver.
+    // Chiamato da CamperPilotWatcher quando il Raver assegnato non è più in grado di guidare
+    // (va a terra mentre si avvicina o mentre è a bordo, oppure per sicurezza se viene
+    // comunque distrutto): il Camper resta fermo dov'è (nessun teletrasporto al punto di
+    // partenza) e la benzina resta al livello raggiunto, pronto per il prossimo Raver.
     public void OnPilotDestroyed()
     {
+        // Il Raver potrebbe essere ancora vivo (a terra, in attesa di rianimazione): senza
+        // cancellare il forcedTarget, appena rianimato tornerebbe dritto qui invece che al
+        // suo punto di guardia originale.
+        pilot?.ClearForcedTarget();
+
         isClaimed = false;
         isMounted = false;
         pilot = null;

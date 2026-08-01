@@ -21,6 +21,8 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     [Header("Stato a terra")]
     [Tooltip("Colore del Raver mentre è a terra, in attesa di essere rianimato dal cono del Player.")]
     [SerializeField] private Color downColor = new Color(0.35f, 0.35f, 0.35f, 1f);
+    [Tooltip("Di quanto si allontana dal punto di guardia quando va a terra: un corpo a terra esattamente sul presidio farebbe comunque da muro passivo (il collider resta solido) anche se la polizia lo ignora come bersaglio.")]
+    [SerializeField] private float downDisplacementDistance = 1.5f;
 
     [Header("Evidenziazione onda")]
     [Tooltip("Quanto si schiarisce il colore del Raver quando viene curato da un'onda sonora (1 = nessun cambiamento).")]
@@ -146,10 +148,27 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+
+            // Si allontana un po' dal punto di guardia prima di bloccarsi, per non restare
+            // esattamente sul presidio come un muro passivo (il collider resta solido anche
+            // se la polizia lo ignora come bersaglio, vedi EnemyChase.FindNearestEngageableRaver).
+            Vector3 awayDirection = raverChase != null
+                ? rb.position - raverChase.GuardPosition
+                : Vector3.zero;
+            awayDirection.y = 0f;
+            if (awayDirection.sqrMagnitude < 0.01f)
+            {
+                // Praticamente in piedi sul punto di guardia: nessuna direzione sensata da cui
+                // allontanarsi, ne sceglie una a caso.
+                Vector2 randomOffset = Random.insideUnitCircle;
+                awayDirection = new Vector3(randomOffset.x, 0f, randomOffset.y);
+            }
+            rb.position += awayDirection.normalized * downDisplacementDistance;
+
             // Con RaverChase disabilitato nessuno azzera più la velocità ad ogni FixedUpdate:
             // senza bloccare anche X/Z (oltre a rotazione e Y, già frozen da RaverChase.Awake),
             // gli urti di chi lo tocca lo spingerebbero via per inerzia. A terra deve restare
-            // esattamente dov'è.
+            // esattamente dov'è (nella nuova posizione, spostata di poco).
             rb.constraints = RigidbodyConstraints.FreezeAll;
         }
 

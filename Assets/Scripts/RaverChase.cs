@@ -35,6 +35,8 @@ public class RaverChase : MonoBehaviour
     [SerializeField] private float patrolMaxTimeOnPoint = 4f;
     [Tooltip("Velocità di movimento in pattuglia: più lenta del passo da combattimento.")]
     [SerializeField] private float patrolMoveSpeed = 0.7f;
+    [Tooltip("Se il Raver è più lontano di così dal punto di guardia (es. appena sceso dal Camper dopo un giro), cammina dritto lì a passo normale invece di vagare lentamente in pattuglia: prima torna in posizione, poi riprende a pattugliare.")]
+    [SerializeField] private float returningThreshold = 3f;
 
     [Header("Modalità veicolo (Camper)")]
     [Tooltip("Quanto velocemente sterza mentre guida il Camper (gradi al secondo), invece di ruotare di scatto come normalmente: vedi SetVehicleMode.")]
@@ -57,6 +59,10 @@ public class RaverChase : MonoBehaviour
     {
         moveSpeed *= factor;
     }
+
+    // Usato da RaverHealth quando il Raver va a terra, per allontanarsi un po' dal punto
+    // che stava difendendo invece di restare fermo esattamente lì (vedi GoDown).
+    public Vector3 GuardPosition => guardPosition;
 
     // Usato da CamperVehicle per mandare questo Raver dritto al Camper, ignorando qualunque
     // Sbirro ingaggiato finché non arriva (vedi GetMoveDestination). Riusa Move()/Rotate()
@@ -119,29 +125,35 @@ public class RaverChase : MonoBehaviour
         }
 
         // A riposo (nessuna minaccia da ingaggiare, nessuna destinazione forzata dal Camper,
-        // e non in modalità veicolo): pattuglia in continuazione tra punti vicini invece di
-        // restare fermo come un blocco statico, al passo lento patrolMoveSpeed invece del
-        // passo da combattimento. In modalità veicolo non pattuglia mai: se non ha nessuno da
-        // inseguire resta semplicemente fermo (vedi GetMoveDestination).
+        // e non in modalità veicolo): normalmente pattuglia in continuazione tra punti vicini
+        // invece di restare fermo come un blocco statico, al passo lento patrolMoveSpeed invece
+        // del passo da combattimento. Se però è più lontano di returningThreshold dal punto di
+        // guardia (es. appena sceso dal Camper dopo un giro per l'arena), prima ci torna dritto
+        // a passo normale: niente pattuglia lenta finché non è di nuovo a casa. In modalità
+        // veicolo non pattuglia mai: se non ha nessuno da inseguire resta semplicemente fermo
+        // (vedi GetMoveDestination).
         bool isIdle = !vehicleMode && forcedTarget == null && target == null;
-        if (isIdle)
+        bool isReturning = isIdle && (rb.position - guardPosition).sqrMagnitude > returningThreshold * returningThreshold;
+        if (isIdle && !isReturning)
         {
             UpdatePatrol();
         }
 
-        Vector3 destination = GetMoveDestination();
+        Vector3 destination = GetMoveDestination(isReturning);
         Vector3 toTarget = destination - rb.position;
         toTarget.y = 0f;
 
-        Move(toTarget, isIdle ? patrolMoveSpeed : moveSpeed, isIdle ? patrolArrivalDistance : minApproachDistance);
+        bool slowIdle = isIdle && !isReturning;
+        Move(toTarget, slowIdle ? patrolMoveSpeed : moveSpeed, slowIdle ? patrolArrivalDistance : minApproachDistance);
         Rotate(toTarget);
     }
 
     // In ordine di priorità: destinazione forzata (il Camper da raggiungere) > [modalità
     // veicolo: guinzaglio dal Player (v1), poi lo Sbirro ingaggiato, altrimenti resta fermo]
-    // > [guardia normale: Sbirro ingaggiato entro engageRadius da guardPosition, altrimenti
-    // punto di pattuglia corrente].
-    private Vector3 GetMoveDestination()
+    // > [guardia normale: Sbirro ingaggiato entro engageRadius da guardPosition, altrimenti,
+    // se lontano da casa (isReturning), dritto al punto di guardia, altrimenti punto di
+    // pattuglia corrente].
+    private Vector3 GetMoveDestination(bool isReturning)
     {
         if (forcedTarget != null)
         {
@@ -159,7 +171,12 @@ public class RaverChase : MonoBehaviour
             return target != null ? target.position : rb.position;
         }
 
-        return target != null ? target.position : patrolPoint;
+        if (target != null)
+        {
+            return target.position;
+        }
+
+        return isReturning ? guardPosition : patrolPoint;
     }
 
     // Appena il punto di pattuglia corrente è raggiunto (o dopo patrolMaxTimeOnPoint secondi,
