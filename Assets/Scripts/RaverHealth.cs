@@ -14,7 +14,7 @@ using UnityEngine;
 public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
-    [SerializeField] private float maxHealth = 130f; // un po' più di uno Sbirro
+    [SerializeField] private float maxHealth = 200f;
     [Tooltip("Danno subito ad ogni attacco andato a segno di uno Sbirro.")]
     [SerializeField] private float damagePerHit = 25f;
 
@@ -39,6 +39,7 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     private RaverChase raverChase;
     private RaverAttack raverAttack;
+    private Rigidbody rb;
 
     private Renderer raverRenderer;
     private MaterialPropertyBlock propertyBlock;
@@ -63,6 +64,7 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     {
         currentHealth = maxHealth;
 
+        rb = GetComponent<Rigidbody>();
         raverChase = GetComponent<RaverChase>();
         raverAttack = GetComponent<RaverAttack>();
 
@@ -140,6 +142,17 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
             raverAttack.enabled = false;
         }
 
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            // Con RaverChase disabilitato nessuno azzera più la velocità ad ogni FixedUpdate:
+            // senza bloccare anche X/Z (oltre a rotazione e Y, già frozen da RaverChase.Awake),
+            // gli urti di chi lo tocca lo spingerebbero via per inerzia. A terra deve restare
+            // esattamente dov'è.
+            rb.constraints = RigidbodyConstraints.FreezeAll;
+        }
+
         if (raverRenderer != null)
         {
             raverRenderer.GetPropertyBlock(propertyBlock);
@@ -163,6 +176,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         if (raverAttack != null)
         {
             raverAttack.enabled = true;
+        }
+
+        if (rb != null)
+        {
+            // Stesso vincolo impostato da RaverChase.Awake(): libera X/Z, tiene rotazione e Y frozen.
+            rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
         }
 
         if (raverRenderer != null)
