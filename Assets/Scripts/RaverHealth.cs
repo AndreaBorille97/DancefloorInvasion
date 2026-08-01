@@ -22,7 +22,7 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     [Tooltip("Colore del Raver mentre è a terra, in attesa di essere rianimato dal cono del Player.")]
     [SerializeField] private Color downColor = new Color(0.35f, 0.35f, 0.35f, 1f);
     [Tooltip("Di quanto si allontana dal punto di guardia quando va a terra: un corpo a terra esattamente sul presidio farebbe comunque da muro passivo (il collider resta solido) anche se la polizia lo ignora come bersaglio.")]
-    [SerializeField] private float downDisplacementDistance = 1.5f;
+    [SerializeField] private float downDisplacementDistance = 3.5f;
 
     [Header("Evidenziazione onda")]
     [Tooltip("Quanto si schiarisce il colore del Raver quando viene curato da un'onda sonora (1 = nessun cambiamento).")]
