@@ -21,7 +21,7 @@ public class SoundWaveProjectile : MonoBehaviour
 
     [Header("Cura Raver")]
     [Tooltip("Quanta vita restituisce ad ogni Raver colpito dall'onda (una sola volta per onda, come il danno ai nemici).")]
-    [SerializeField] private float healAmount = 10f;
+    [SerializeField] private float healAmount = 20f;
 
     [Header("Visuale")]
     [SerializeField] private Color waveColor = new Color(0.4f, 0.9f, 1f, 0.35f); // colore e trasparenza dell'area visibile
