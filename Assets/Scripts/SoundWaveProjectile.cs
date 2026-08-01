@@ -20,8 +20,8 @@ public class SoundWaveProjectile : MonoBehaviour
     [SerializeField] private LayerMask targetMask; // layer dei nemici colpibili (da impostare in Inspector)
 
     [Header("Cura Raver")]
-    [Tooltip("Quanta vita restituisce ad ogni Raver colpito dall'onda (una sola volta per onda, come il danno ai nemici). Tarato per rianimare un Raver a terra (200 vita) in circa 3 secondi di esposizione continua al fuoco automatico del Player (bpm 172, un colpo ogni ~0.35s: 9 colpi ~3.1s).")]
-    [SerializeField] private float healAmount = 23f;
+    [Tooltip("Quanta vita restituisce ad ogni Raver colpito dall'onda (una sola volta per onda, come il danno ai nemici). Tarato per rianimare un Raver a terra (200 vita) in circa 2 secondi di esposizione continua al fuoco automatico del Player (bpm 172, un colpo ogni ~0.35s: 6 colpi ~2.1s).")]
+    [SerializeField] private float healAmount = 34f;
 
     [Header("Visuale")]
     [SerializeField] private Color waveColor = new Color(0.4f, 0.9f, 1f, 0.35f); // colore e trasparenza dell'area visibile
