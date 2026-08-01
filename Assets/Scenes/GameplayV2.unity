@@ -2610,8 +2610,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: floor
-      value: 
+      value:
       objectReference: {fileID: 930677639}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: spawnInterval
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: intervalDecreasePerSecond
+      value: 0.0015
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: minSpawnInterval
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalScale.x
       value: 4.0317
@@ -4196,8 +4208,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: floor
-      value: 
+      value:
       objectReference: {fileID: 930677639}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: spawnInterval
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: intervalDecreasePerSecond
+      value: 0.0015
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: minSpawnInterval
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalScale.x
       value: 2.8915
@@ -4699,8 +4723,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: floor
-      value: 
+      value:
       objectReference: {fileID: 930677639}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: spawnInterval
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: intervalDecreasePerSecond
+      value: 0.0015
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: minSpawnInterval
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 7150582238379728599, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: m_LocalScale.x
       value: 2.4938
@@ -5646,11 +5682,19 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: floor
-      value: 
+      value:
       objectReference: {fileID: 930677639}
     - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: spawnInterval
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: intervalDecreasePerSecond
-      value: 0.004
+      value: 0.0015
+      objectReference: {fileID: 0}
+    - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
+      propertyPath: minSpawnInterval
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 1899326250093990374, guid: cee4e5d2b3d39404881e06696566408a, type: 3}
       propertyPath: enemyOptions.Array.data[2].weight
