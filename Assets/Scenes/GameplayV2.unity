@@ -4119,7 +4119,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpeedUpPowerUpAmmoSpawner
   ammoPrefab: {fileID: 2341329388697262006, guid: 3cb365955163f6445abd7b3a11bb00c5, type: 3}
   floor: {fileID: 930677639}
-  maxSpawnInterval: 20
+  maxSpawnInterval: 10
   spawnHeight: 0.5
 --- !u!4 &988355996
 Transform:
