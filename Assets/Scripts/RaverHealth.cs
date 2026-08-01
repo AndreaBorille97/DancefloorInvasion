@@ -9,8 +9,12 @@ using UnityEngine;
 // Quando la vita arriva a zero il Raver non sparisce: entra in stato "a terra" (isDown),
 // disabilita RaverChase/RaverAttack (resta fermo, non ingaggia più nessuno) e cambia colore,
 // ma il collider resta attivo così l'onda sonora del Player continua a rilevarlo e può
-// rianimarlo. La rianimazione richiede di riportarlo a vita piena (non basta una cura
-// parziale): sotto quella soglia resta a terra.
+// rianimarlo. Se in scena c'è una ChilloutZone, ci si sposta sopra (con un piccolo offset
+// casuale, così più Raver a terra insieme non si sovrappongono esattamente) e lì recupera
+// vita lentamente da solo, oltre a poter essere aiutato dal cono del Player come sempre;
+// altrimenti (nessuna ChilloutZone in scena) si allontana semplicemente dal punto di
+// guardia come prima, senza cura passiva. La rianimazione richiede di riportarlo a vita
+// piena (non basta una cura parziale): sotto quella soglia resta a terra.
 public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
@@ -21,8 +25,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     [Header("Stato a terra")]
     [Tooltip("Colore del Raver mentre è a terra, in attesa di essere rianimato dal cono del Player.")]
     [SerializeField] private Color downColor = new Color(0.35f, 0.35f, 0.35f, 1f);
-    [Tooltip("Di quanto si allontana dal punto di guardia quando va a terra: un corpo a terra esattamente sul presidio farebbe comunque da muro passivo (il collider resta solido) anche se la polizia lo ignora come bersaglio.")]
+    [Tooltip("Fallback se non c'è nessuna ChilloutZone in scena: di quanto si allontana dal punto di guardia quando va a terra, per non fare comunque da muro passivo (il collider resta solido anche se la polizia lo ignora come bersaglio).")]
     [SerializeField] private float downDisplacementDistance = 3.5f;
+    [Tooltip("Raggio entro cui si sparpagliano attorno alla ChilloutZone i Raver a terra, così più di uno insieme non finiscono esattamente sovrapposti.")]
+    [SerializeField] private float chilloutSpread = 2f;
+    [Tooltip("Vita recuperata al secondo mentre è a terra: molto lenta apposta, il Player può sempre velocizzare la rianimazione col cono.")]
+    [SerializeField] private float passiveHealPerSecond = 4f;
 
     [Header("Evidenziazione onda")]
     [Tooltip("Quanto si schiarisce il colore del Raver quando viene curato da un'onda sonora (1 = nessun cambiamento).")]
@@ -75,6 +83,16 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         {
             propertyBlock = new MaterialPropertyBlock();
             baseColor = raverRenderer.sharedMaterial.color;
+        }
+    }
+
+    void Update()
+    {
+        // Cura passiva mentre è a terra: riusa Heal(), che si occupa già da sé di farlo
+        // rialzare appena raggiunge la vita piena (vedi Reactivate).
+        if (isDown && passiveHealPerSecond > 0f)
+        {
+            Heal(passiveHealPerSecond * Time.deltaTime);
         }
     }
 
@@ -149,26 +167,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
 
-            // Si allontana un po' dal punto di guardia prima di bloccarsi, per non restare
-            // esattamente sul presidio come un muro passivo (il collider resta solido anche
-            // se la polizia lo ignora come bersaglio, vedi EnemyChase.FindNearestEngageableRaver).
-            Vector3 awayDirection = raverChase != null
-                ? rb.position - raverChase.GuardPosition
-                : Vector3.zero;
-            awayDirection.y = 0f;
-            if (awayDirection.sqrMagnitude < 0.01f)
-            {
-                // Praticamente in piedi sul punto di guardia: nessuna direzione sensata da cui
-                // allontanarsi, ne sceglie una a caso.
-                Vector2 randomOffset = Random.insideUnitCircle;
-                awayDirection = new Vector3(randomOffset.x, 0f, randomOffset.y);
-            }
-            rb.position += awayDirection.normalized * downDisplacementDistance;
+            rb.position = GetDownPosition();
 
             // Con RaverChase disabilitato nessuno azzera più la velocità ad ogni FixedUpdate:
             // senza bloccare anche X/Z (oltre a rotazione e Y, già frozen da RaverChase.Awake),
             // gli urti di chi lo tocca lo spingerebbero via per inerzia. A terra deve restare
-            // esattamente dov'è (nella nuova posizione, spostata di poco).
+            // esattamente dov'è (nella nuova posizione).
             rb.constraints = RigidbodyConstraints.FreezeAll;
         }
 
@@ -179,6 +183,38 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
             propertyBlock.SetColor("_Color", downColor); // Standard/fallback
             raverRenderer.SetPropertyBlock(propertyBlock);
         }
+    }
+
+    // Se in scena c'è una ChilloutZone, il Raver ci si sposta sopra (con un piccolo offset
+    // casuale, così più Raver a terra insieme non finiscono esattamente sovrapposti), alla
+    // stessa altezza da terra in cui si trovava. Altrimenti (fallback, nessuna ChilloutZone)
+    // si allontana semplicemente dal punto di guardia, come faceva prima di avere un vero
+    // posto dove andare.
+    private Vector3 GetDownPosition()
+    {
+        if (ChilloutZone.Instance != null)
+        {
+            Vector2 randomOffset = Random.insideUnitCircle * chilloutSpread;
+            Vector3 chilloutPosition = ChilloutZone.Instance.transform.position;
+            chilloutPosition.x += randomOffset.x;
+            chilloutPosition.z += randomOffset.y;
+            chilloutPosition.y = rb.position.y;
+            return chilloutPosition;
+        }
+
+        Vector3 awayDirection = raverChase != null
+            ? rb.position - raverChase.GuardPosition
+            : Vector3.zero;
+        awayDirection.y = 0f;
+        if (awayDirection.sqrMagnitude < 0.01f)
+        {
+            // Praticamente in piedi sul punto di guardia: nessuna direzione sensata da cui
+            // allontanarsi, ne sceglie una a caso.
+            Vector2 randomOffset = Random.insideUnitCircle;
+            awayDirection = new Vector3(randomOffset.x, 0f, randomOffset.y);
+        }
+
+        return rb.position + awayDirection.normalized * downDisplacementDistance;
     }
 
     // Chiamato da Heal() quando la vita accumulata da terra raggiunge maxHealth: torna a
