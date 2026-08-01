@@ -5061,7 +5061,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac09c36b6b3a73047bbf69737d7535cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CamperVehicle
-  maxFuel: 20
+  maxFuel: 40
+  refillFraction: 0.25
   mountOffset: {x: 0, y: 0, z: 0}
   lyingTiltEuler: {x: 90, y: 0, z: 0}
   rotationSpeed: 4

@@ -35,6 +35,7 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     private float currentHealth;
     private bool isDown;
+    private bool isInvulnerable;
 
     private RaverChase raverChase;
     private RaverAttack raverAttack;
@@ -50,6 +51,13 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta; 0 se a terra.
     public float HealthFraction => isDown ? 0f : Mathf.Clamp01(currentHealth / maxHealth);
+
+    // Chiamato da CamperVehicle su Mount/Dismount: mentre pilota il Camper il Raver non
+    // subisce alcun danno, a prescindere da chi/cosa lo colpisce.
+    public void SetInvulnerable(bool value)
+    {
+        isInvulnerable = value;
+    }
 
     void Awake()
     {
@@ -74,10 +82,11 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     public void TakeDamage(float amount)
     {
-        if (isDown)
+        if (isDown || isInvulnerable)
         {
             // Già a terra: nessun ulteriore danno, evita che la vita scenda sotto zero
-            // all'infinito mentre aspetta di essere rianimato.
+            // all'infinito mentre aspetta di essere rianimato. Alla guida del Camper:
+            // invulnerabile, vedi SetInvulnerable.
             return;
         }
 

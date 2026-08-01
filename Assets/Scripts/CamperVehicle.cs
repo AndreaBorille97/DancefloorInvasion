@@ -4,7 +4,8 @@ using UnityEngine;
 // Da mettere sul Camper piazzato in scena (Assets/Prefabs/Camper.prefab), con il suo
 // Collider impostato come Trigger (Is Trigger = true).
 //
-// Funziona a benzina: CamperPickup la rabbocca al massimo alla raccolta (RefillFuel), e in
+// Funziona a benzina: CamperPickup la rabbocca di un quarto del serbatoio alla raccolta
+// (RefillFuel, non un pieno completo: servono 4 ammo per riempirlo del tutto), e in
 // qualsiasi momento della partita il Player può premere L2 (vedi PlayerCamperSummon) per
 // mandare il Raver più vicino al Camper (TrySendNearestRaver), a patto che ci sia benzina e
 // nessun altro Raver sia già assegnato. Il Raver ci cammina dritto sopra (RaverChase.
@@ -13,7 +14,9 @@ using UnityEngine;
 // niente vero parenting, altrimenti se il Raver muore Unity distruggerebbe anche il Camper
 // insieme a lui. Mentre è a bordo, ogni Sbirro toccato dal Camper subisce il quadruplo del
 // danno di un colpo di Raver normale (vedi EnemyHealth.TakeCamperHit), non più insta-kill,
-// e la benzina scende di un secondo per ogni secondo di guida.
+// la benzina scende di un secondo per ogni secondo di guida, e il Raver alla guida è
+// invulnerabile (vedi RaverHealth.SetInvulnerable, chiamato da Mount/Dismount): niente lo
+// tocca finché resta a bordo.
 //
 // Il Camper resta fermo esattamente dov'è (nessun teletrasporto) sia quando il Raver pilota
 // muore ucciso da un nemico (OnPilotDestroyed), sia quando finisce semplicemente la benzina:
@@ -23,8 +26,10 @@ using UnityEngine;
 public class CamperVehicle : MonoBehaviour
 {
     [Header("Benzina")]
-    [Tooltip("N: secondi massimi di guida per rifornimento (vedi RefillFuel, chiamato da CamperPickup).")]
-    [SerializeField] private float maxFuel = 20f;
+    [Tooltip("N: secondi massimi di guida col serbatoio pieno.")]
+    [SerializeField] private float maxFuel = 40f;
+    [Tooltip("Frazione del serbatoio rabboccata da ogni ammo raccolta (vedi RefillFuel, chiamato da CamperPickup): 0.25 = un quarto, servono 4 ammo per il pieno.")]
+    [SerializeField] private float refillFraction = 0.25f;
 
     [Header("A bordo")]
     [Tooltip("Offset locale rispetto al Raver mentre è a bordo: regolabile per far combaciare visivamente i due modelli.")]
@@ -95,11 +100,12 @@ public class CamperVehicle : MonoBehaviour
             Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime));
     }
 
-    // Chiamato da CamperPickup alla raccolta dell'ammo: rabbocca sempre al massimo,
-    // indipendentemente da quanta benzina restava.
+    // Chiamato da CamperPickup alla raccolta dell'ammo: aggiunge solo refillFraction del
+    // serbatoio (non un pieno completo), sommandosi a quanta benzina restava già, senza
+    // superare maxFuel.
     public void RefillFuel()
     {
-        fuel = maxFuel;
+        fuel = Mathf.Min(fuel + maxFuel * refillFraction, maxFuel);
         UpdateFuelUI();
     }
 
@@ -163,6 +169,7 @@ public class CamperVehicle : MonoBehaviour
         {
             pilot.SetVehicleMode(false);
             pilot.MultiplyMoveSpeed(1f / speedMultiplier); // ripristina la velocità normale a piedi
+            pilot.GetComponent<RaverHealth>()?.SetInvulnerable(false); // torna vulnerabile appena scende
             CamperPilotWatcher watcher = pilot.GetComponent<CamperPilotWatcher>();
             if (watcher != null)
             {
@@ -207,6 +214,7 @@ public class CamperVehicle : MonoBehaviour
         pilot.ClearForcedTarget(); // torna a bersagliare gli Sbirro normalmente, ora col Camper al seguito
         pilot.SetVehicleMode(true); // avanza sterzando invece di ruotare/spostarsi di scatto
         pilot.MultiplyMoveSpeed(speedMultiplier); // più veloce di un Raver a piedi
+        pilot.GetComponent<RaverHealth>()?.SetInvulnerable(true); // niente lo tocca finché resta a bordo
         SetBlockingColliderEnabled(false); // da guidato niente ingombro fisico: non deve spingere Raver/nemici né bloccare il one-shot
     }
 
