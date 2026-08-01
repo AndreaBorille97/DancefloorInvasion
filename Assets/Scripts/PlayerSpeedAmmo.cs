@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class PlayerSpeedAmmo : MonoBehaviour
 {
     [Header("Munizione Speed")]
-    [SerializeField] private float dashDistance = 6f; // N: lunghezza dello scatto (unità)
+    [SerializeField] private float dashDistance = 12f; // N: lunghezza dello scatto (unità)
 
     [Header("UI")]
     [SerializeField] private Text ammoText; // testo UI che mostra il conteggio munizioni; se vuoto non mostra nulla

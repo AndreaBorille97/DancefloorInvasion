@@ -2152,7 +2152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eeb6fbfd4eeeb1a4ba8030438f872975, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSpeedAmmo
-  dashDistance: 6
+  dashDistance: 12
   ammoText: {fileID: 0}
   hud: {fileID: 24439617}
 --- !u!114 &426467624
