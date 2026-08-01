@@ -17,7 +17,7 @@ public class EnemyChase : MonoBehaviour
     [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Console/DJ e SoundSystem, e ricontrolla la distanza dal Player.")]
     [SerializeField] private float retargetInterval = 0.5f;
     [Tooltip("Se il Player entra entro questa distanza, diventa bersaglio prioritario rispetto a Console/DJ e SoundSystem: da provare/tarare in game.")]
-    [SerializeField] private float playerAggroRadius = 11f;
+    [SerializeField] private float playerAggroRadius = 16f;
     [Tooltip("Se un Raver (vivo, non a terra) è entro questa distanza, ha sempre priorità assoluta su tutto il resto: prima libera la strada, poi torna a puntare l'obiettivo.")]
     [SerializeField] private float raverEngageDistance = 2f;
 
