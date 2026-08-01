@@ -39,8 +39,11 @@ public class RaverChase : MonoBehaviour
     [Header("Modalità veicolo (Camper)")]
     [Tooltip("Quanto velocemente sterza mentre guida il Camper (gradi al secondo), invece di ruotare di scatto come normalmente: vedi SetVehicleMode.")]
     [SerializeField] private float vehicleTurnSpeed = 180f;
+    [Tooltip("Comportamento della v1: mentre pilota il Camper insegue sempre lo Sbirro più vicino, senza limiti di raggio, ma se si allontana oltre questa distanza dal Player smette e punta dritto verso di lui finché non rientra nel raggio.")]
+    [SerializeField] private float maxDistanceFromPlayer = 10f;
 
     private Rigidbody rb;
+    private Transform player; // usato solo in modalità veicolo, per il guinzaglio dal Player (v1)
     private Vector3 guardPosition; // punto attorno a cui pattuglia quando non c'è nessuna minaccia da ingaggiare, catturato in Awake
     private Vector3 patrolPoint; // punto di pattuglia corrente, entro patrolRadius da guardPosition
     private float patrolPointTimer;
@@ -86,6 +89,8 @@ public class RaverChase : MonoBehaviour
         rb.useGravity = false;
         rb.constraints |= RigidbodyConstraints.FreezePositionY;
 
+        player = GameObject.FindGameObjectWithTag("Player")?.transform;
+
         guardPosition = transform.position;
         PickNewPatrolPoint();
 
@@ -104,18 +109,21 @@ public class RaverChase : MonoBehaviour
             AcquireNearestEnemy();
         }
 
-        // Guinzaglio duro: se inseguendo il bersaglio il Raver stesso si è allontanato troppo
-        // dal punto di guardia, lo molla subito, a prescindere da dove si trova ora il bersaglio.
-        // Il presidio dell'obiettivo protetto ha sempre la priorità sull'inseguimento.
-        if (target != null && (rb.position - guardPosition).sqrMagnitude > maxLeashFromGuard * maxLeashFromGuard)
+        // Guinzaglio duro al punto di guardia: solo da fermi (non in modalità veicolo, dove
+        // vale invece il guinzaglio dal Player, vedi GetMoveDestination). Se inseguendo il
+        // bersaglio il Raver stesso si è allontanato troppo dal punto di guardia, lo molla
+        // subito: il presidio dell'obiettivo protetto ha sempre la priorità sull'inseguimento.
+        if (!vehicleMode && target != null && (rb.position - guardPosition).sqrMagnitude > maxLeashFromGuard * maxLeashFromGuard)
         {
             target = null;
         }
 
-        // A riposo (nessuna minaccia da ingaggiare, nessuna destinazione forzata dal Camper):
-        // pattuglia in continuazione tra punti vicini invece di restare fermo come un blocco
-        // statico, al passo lento patrolMoveSpeed invece del passo da combattimento.
-        bool isIdle = forcedTarget == null && target == null;
+        // A riposo (nessuna minaccia da ingaggiare, nessuna destinazione forzata dal Camper,
+        // e non in modalità veicolo): pattuglia in continuazione tra punti vicini invece di
+        // restare fermo come un blocco statico, al passo lento patrolMoveSpeed invece del
+        // passo da combattimento. In modalità veicolo non pattuglia mai: se non ha nessuno da
+        // inseguire resta semplicemente fermo (vedi GetMoveDestination).
+        bool isIdle = !vehicleMode && forcedTarget == null && target == null;
         if (isIdle)
         {
             UpdatePatrol();
@@ -129,13 +137,26 @@ public class RaverChase : MonoBehaviour
         Rotate(toTarget);
     }
 
-    // In ordine di priorità: destinazione forzata (il Camper da raggiungere) > Sbirro
-    // ingaggiato entro engageRadius da guardPosition > punto di pattuglia corrente.
+    // In ordine di priorità: destinazione forzata (il Camper da raggiungere) > [modalità
+    // veicolo: guinzaglio dal Player (v1), poi lo Sbirro ingaggiato, altrimenti resta fermo]
+    // > [guardia normale: Sbirro ingaggiato entro engageRadius da guardPosition, altrimenti
+    // punto di pattuglia corrente].
     private Vector3 GetMoveDestination()
     {
         if (forcedTarget != null)
         {
             return forcedTarget.position;
+        }
+
+        if (vehicleMode)
+        {
+            if (player != null && (rb.position - player.position).sqrMagnitude > maxDistanceFromPlayer * maxDistanceFromPlayer)
+            {
+                // Troppo lontano dal Player: molla lo Sbirro e punta dritto verso di lui.
+                return player.position;
+            }
+
+            return target != null ? target.position : rb.position;
         }
 
         return target != null ? target.position : patrolPoint;
@@ -165,25 +186,34 @@ public class RaverChase : MonoBehaviour
         patrolPoint = guardPosition + new Vector3(offset.x, 0f, offset.y);
     }
 
-    // Ricalcola lo Sbirro più vicino, ma solo se entro engageRadius da guardPosition:
-    // fuori da quel raggio resta null, e GetMoveDestination riporta il Raver in posizione.
+    // In modalità veicolo (v1): lo Sbirro più vicino al Raver stesso, senza limiti di
+    // raggio (il guinzaglio dal Player è gestito a parte in GetMoveDestination). Da fermi
+    // (guardia normale): solo il più vicino a guardPosition, ed entro engageRadius da lì
+    // — fuori da quel raggio resta null, e GetMoveDestination riporta il Raver in posizione.
     private void AcquireNearestEnemy()
+    {
+        target = vehicleMode
+            ? FindNearestEnemy(transform.position, float.MaxValue)
+            : FindNearestEnemy(guardPosition, engageRadius);
+    }
+
+    private static Transform FindNearestEnemy(Vector3 referencePoint, float maxRadius)
     {
         Transform nearest = null;
         float nearestSqrDistance = float.MaxValue;
-        float sqrEngageRadius = engageRadius * engageRadius;
+        float sqrMaxRadius = maxRadius * maxRadius;
 
         foreach (EnemyHealth enemy in FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None))
         {
-            float sqrDistance = (enemy.transform.position - guardPosition).sqrMagnitude;
-            if (sqrDistance <= sqrEngageRadius && sqrDistance < nearestSqrDistance)
+            float sqrDistance = (enemy.transform.position - referencePoint).sqrMagnitude;
+            if (sqrDistance <= sqrMaxRadius && sqrDistance < nearestSqrDistance)
             {
                 nearest = enemy.transform;
                 nearestSqrDistance = sqrDistance;
             }
         }
 
-        target = nearest;
+        return nearest;
     }
 
     private void Move(Vector3 toTarget, float speed, float stopDistance)
