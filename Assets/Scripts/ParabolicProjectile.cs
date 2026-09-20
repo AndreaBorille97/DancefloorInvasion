@@ -84,11 +84,20 @@ public class ParabolicProjectile : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // Su un colpo diretto (OnTriggerEnter) transform.position è ancora a metà dell'arco,
+    // quindi potenzialmente ben sopra il pavimento: qui riportiamo la nuvola all'altezza di
+    // targetPosition (la stessa quota usata per l'atterraggio "naturale" a fine corsa,
+    // vedi Update quando t>=1, dove l'arco si annulla), così resta sempre a terra invece di
+    // comparire a mezz'aria dov'è avvenuto l'impatto.
     private void SpawnCloud()
     {
-        if (cloudPrefab != null)
+        if (cloudPrefab == null)
         {
-            Instantiate(cloudPrefab, transform.position, Quaternion.identity);
+            return;
         }
+
+        Vector3 groundPosition = transform.position;
+        groundPosition.y = targetPosition.y;
+        Instantiate(cloudPrefab, groundPosition, Quaternion.identity);
     }
 }

@@ -189,7 +189,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fd910ba134df4a4c857b485228d339b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RaverHealth
-  maxHealth: 200
+  maxHealth: 50
   damagePerHit: 25
 --- !u!114 &2478277215555340813
 MonoBehaviour:

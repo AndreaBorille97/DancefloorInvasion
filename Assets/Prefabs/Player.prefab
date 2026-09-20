@@ -128,8 +128,8 @@ GameObject:
   - component: {fileID: 4871912922737414820}
   - component: {fileID: 7785721814292175590}
   - component: {fileID: 8307436991682330130}
-  - component: {fileID: 7830690281801528843}
   - component: {fileID: 8008429867679001522}
+  - component: {fileID: 8008429867679001523}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -307,21 +307,6 @@ MonoBehaviour:
   targetRenderer: {fileID: 0}
   flashColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.15
---- !u!114 &7830690281801528843
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3327895327887446883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2af5f322f384604988ccccf07c1603f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerCamperAmmo
-  camperPrefab: {fileID: 7378911836535181320, guid: 9e56a13a69191b24c917664355b7114e, type: 3}
-  sideOffset: 1
-  ammoText: {fileID: 0}
 --- !u!114 &8008429867679001522
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -334,3 +319,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79ce73b52fce247b3f7525ba0c076017, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSoundWavePowerUps
+--- !u!114 &8008429867679001523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3327895327887446883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b3e9f1a5c8d42e6b0f7a3c9e2d5b168, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerJugglerSummon
+  throwDistance: 6

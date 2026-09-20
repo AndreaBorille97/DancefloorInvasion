@@ -1,11 +1,20 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Da mettere sul GameObject "ArenaBounds", con 4 figli (WallNord, WallSud, WallEst,
 // WallOvest) ciascuno con un BoxCollider. All'avvio riposiziona e ridimensiona i 4 muri
 // in base ai bounds di "floor" (stessa convenzione di RaverSpawner), così restano
 // allineati al pavimento anche se questo viene ridimensionato, senza ricalcolarli a mano.
+// Espone anche i collider dei muri come singleton statico: i nemici, spawnati fuori dal
+// perimetro per sembrare "arrivare da fuori" invece di comparire dal nulla, li ignorano
+// alla comparsa (vedi IgnoreCollisionsForEnemy, chiamato da EnemyHealth/RobosbirroHealth)
+// così ci camminano attraverso. Player e Raver restano invece contenuti dai muri.
 public class ArenaBounds : MonoBehaviour
 {
+    public static ArenaBounds Instance { get; private set; }
+
+    private Collider[] wallColliders;
+
     [SerializeField] private Transform floor; // oggetto "floor", usato per calcolare i confini della mappa (Renderer o, in mancanza, Collider)
     [SerializeField] private float wallThickness = 2f;
     [SerializeField] private float wallHeight = 10f;
@@ -18,7 +27,80 @@ public class ArenaBounds : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
         UpdateWalls();
+        CacheWallColliders();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void CacheWallColliders()
+    {
+        List<Collider> colliders = new List<Collider>();
+        AddWallColliders(colliders, wallNord);
+        AddWallColliders(colliders, wallSud);
+        AddWallColliders(colliders, wallEst);
+        AddWallColliders(colliders, wallOvest);
+
+        // Anche il BoxCollider del pavimento (l'oggetto "FloorBoundAnchors" che ospita
+        // ArenaBounds e FloorBounds) è un blocco solido alto ~2 unità che copre tutta
+        // l'arena: un nemico che entra da fuori ne urterebbe la parete verticale al bordo,
+        // restando fermo lì nonostante abbia già attraversato i 4 muri. Va quindi ignorato
+        // anche quello. I nemici hanno la Y bloccata e niente gravità, non ci "poggiano"
+        // sopra, quindi ignorarlo non li fa cadere.
+        if (transform.parent != null)
+        {
+            foreach (Collider parentCollider in transform.parent.GetComponents<Collider>())
+            {
+                if (!parentCollider.isTrigger)
+                {
+                    colliders.Add(parentCollider);
+                }
+            }
+        }
+
+        wallColliders = colliders.ToArray();
+    }
+
+    private static void AddWallColliders(List<Collider> destination, Transform wall)
+    {
+        if (wall == null)
+        {
+            return;
+        }
+
+        destination.AddRange(wall.GetComponentsInChildren<Collider>());
+    }
+
+    // Chiamato da un nemico alla comparsa: disattiva la collisione fisica tra i suoi
+    // collider e i 4 muri dell'arena, così può attraversarli camminando dagli spawner
+    // piazzati fuori dal perimetro fin dentro l'arena. Non tocca la collisione con
+    // nient'altro (pavimento, altri nemici, Raver, obiettivi), né quella di Player/Raver
+    // coi muri, che restano bloccati dentro come prima.
+    public static void IgnoreCollisionsForEnemy(GameObject enemy)
+    {
+        if (Instance == null || Instance.wallColliders == null || enemy == null)
+        {
+            return;
+        }
+
+        Collider[] enemyColliders = enemy.GetComponentsInChildren<Collider>();
+        foreach (Collider enemyCollider in enemyColliders)
+        {
+            foreach (Collider wallCollider in Instance.wallColliders)
+            {
+                if (wallCollider != null)
+                {
+                    Physics.IgnoreCollision(enemyCollider, wallCollider, true);
+                }
+            }
+        }
     }
 
     private void UpdateWalls()
@@ -82,15 +164,18 @@ public class ArenaBounds : MonoBehaviour
         Renderer floorRenderer = floor.GetComponentInChildren<Renderer>();
         if (floorRenderer != null)
         {
+            Debug.Log($"[ArenaBounds DEBUG] bounds da Renderer di '{floorRenderer.name}': center={floorRenderer.bounds.center}, size={floorRenderer.bounds.size}");
             return floorRenderer.bounds;
         }
 
         Collider floorCollider = floor.GetComponentInChildren<Collider>();
         if (floorCollider != null)
         {
+            Debug.Log($"[ArenaBounds DEBUG] bounds da Collider di '{floorCollider.name}' (enabled={floorCollider.enabled}): center={floorCollider.bounds.center}, size={floorCollider.bounds.size}");
             return floorCollider.bounds;
         }
 
+        Debug.LogWarning($"[ArenaBounds DEBUG] NESSUN Renderer/Collider trovato su '{floor.name}' (activeInHierarchy={floor.gameObject.activeInHierarchy}) -> bounds a size zero in {floor.position}. I muri collasseranno su questo punto.");
         return new Bounds(floor.position, Vector3.zero);
     }
 }

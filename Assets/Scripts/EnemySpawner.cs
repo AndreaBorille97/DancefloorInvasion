@@ -12,6 +12,8 @@ public class EnemySpawner : MonoBehaviour
     {
         public GameObject prefab;   // tipo di nemico da spawnare
         public float weight = 1f;   // peso relativo: più alto = più probabile rispetto agli altri
+        [Tooltip("Secondi di gioco trascorsi prima che questo tipo possa comparire (0 = disponibile da subito). Es. Sbirro2 dopo 60s, Sbirro3 dopo 120s.")]
+        public float unlockTime = 0f;
     }
 
     [Header("Spawn")]
@@ -29,8 +31,12 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float minSpawnDistance = 1.5f; // distanza minima richiesta da altri nemici già presenti
     [SerializeField] private LayerMask enemyLayer;          // layer dei nemici, usato per controllare le sovrapposizioni
     [SerializeField] private int maxSpawnAttempts = 10;      // tentativi massimi per trovare una posizione libera
-    [Tooltip("Oggetto \"floor\": se assegnato, le posizioni di spawn vengono ristrette ai suoi bounds, utile per spawner vicini ai bordi dell'arena.")]
+    [Tooltip("Oggetto \"floor\": se assegnato, le posizioni di spawn vengono ristrette ai suoi bounds, utile per spawner vicini ai bordi dell'arena. Ignorato se è impostato un percorso (path): in quel caso lo spawner sta fuori dall'arena di proposito.")]
     [SerializeField] private Transform floor;
+
+    [Header("Percorso obbligatorio")]
+    [Tooltip("Se assegnato, ogni nemico generato segue questo percorso (vedi EnemyPath) dallo spawn fino all'ultimo waypoint, ignorando bersagli e aggro, poi passa all'AI normale. Pensato per spawner piazzati fuori dall'arena, così i nemici fanno un giro prestabilito ed entrano da dove vuoi tu invece che dal punto più vicino.")]
+    [SerializeField] private EnemyPath path;
 
     private float timer;
     private float elapsedTime; // tempo totale trascorso dall'avvio, usato per accorciare l'intervallo di spawn
@@ -98,7 +104,28 @@ public class EnemySpawner : MonoBehaviour
         // allo spawn di questo ciclo piuttosto che sovrapporre i nemici.
         if (TryGetFreeSpawnPosition(out Vector3 spawnPosition))
         {
-            Instantiate(enemyPrefab, spawnPosition, transform.rotation);
+            GameObject enemy = Instantiate(enemyPrefab, spawnPosition, transform.rotation);
+            AssignPath(enemy);
+        }
+    }
+
+    private void AssignPath(GameObject enemy)
+    {
+        if (path == null)
+        {
+            return;
+        }
+
+        // Il nemico ha EnemyChase (melee) oppure EnemyRangedAttack (a distanza), mai
+        // entrambi: si prova con tutti e due e chi c'è riceve il percorso.
+        if (enemy.TryGetComponent(out EnemyChase chase))
+        {
+            chase.SetPath(path);
+        }
+
+        if (enemy.TryGetComponent(out EnemyRangedAttack ranged))
+        {
+            ranged.SetPath(path);
         }
     }
 
@@ -107,7 +134,7 @@ public class EnemySpawner : MonoBehaviour
         float totalWeight = 0f;
         foreach (EnemyOption option in enemyOptions)
         {
-            if (option.prefab != null)
+            if (option.prefab != null && elapsedTime >= option.unlockTime)
             {
                 totalWeight += option.weight;
             }
@@ -121,7 +148,7 @@ public class EnemySpawner : MonoBehaviour
         float roll = Random.Range(0f, totalWeight);
         foreach (EnemyOption option in enemyOptions)
         {
-            if (option.prefab == null)
+            if (option.prefab == null || elapsedTime < option.unlockTime)
             {
                 continue;
             }
@@ -164,7 +191,9 @@ public class EnemySpawner : MonoBehaviour
 
         // Se lo spawner è vicino a un bordo (es. agli angoli dell'arena), il cerchio di spawn
         // potrebbe sporgere fuori dal pavimento: si riporta il punto entro i bounds del floor.
-        if (floor != null)
+        // Con un percorso assegnato invece lo spawner sta fuori apposta: clampare lo
+        // riporterebbe dentro l'arena, vanificando il giro.
+        if (floor != null && path == null)
         {
             Bounds bounds = GetFloorBounds();
             candidate.x = Mathf.Clamp(candidate.x, bounds.min.x, bounds.max.x);
@@ -190,6 +219,7 @@ public class EnemySpawner : MonoBehaviour
             return floorCollider.bounds;
         }
 
+        Debug.LogWarning($"[EnemySpawner DEBUG] '{name}': nessun Renderer/Collider trovato su '{floor.name}' (activeInHierarchy={floor.gameObject.activeInHierarchy}) -> bounds a size zero in {floor.position}. Tutti gli spawn verranno clampati su questo punto.");
         return new Bounds(floor.position, Vector3.zero);
     }
 }

@@ -1,3 +1,4 @@
+using AirShot;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,6 +25,11 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 moveDirection; // direzione di movimento letta dallo stick sinistro (aggiornata ogni frame)
     private Vector3 aimDirection;  // direzione di mira/rotazione letta dallo stick destro (mantiene l'ultimo valore valido)
     private Vector3 pendingDash;   // offset accodato da Dash(), consumato dal prossimo Move()
+    // Onda d'urto dello scatto: basta aggiungere il componente Air Shot VFX al Player (o a un
+    // suo figlio) e viene agganciato da solo, niente da collegare a mano nell'Inspector.
+    // Resta null finché il componente non c'è: in quel caso lo scatto funziona come prima,
+    // senza effetto.
+    private AirShotVFX dashVfx;
 
     void Awake()
     {
@@ -38,6 +44,8 @@ public class PlayerMovement : MonoBehaviour
         rb.isKinematic = true;
 
         aimDirection = transform.forward; // direzione iniziale = quella verso cui il player guarda in scena
+
+        dashVfx = GetComponentInChildren<AirShotVFX>();
     }
 
     void Update()
@@ -86,9 +94,10 @@ public class PlayerMovement : MonoBehaviour
     {
         // Sposta il Rigidbody nella direzione di movimento, scalata per velocità e per il tempo del fixed step
         // (Time.fixedDeltaTime rende il movimento indipendente dal framerate), più l'eventuale
-        // scatto accodato da Dash(): sommarli in un'unica chiamata a MovePosition evita che le
-        // due chiamate si accavallino sullo stesso step fisico, dove vincerebbe solo l'ultima
+        // scatto accodato da Dash(): sommarli in un'unica chiamata evita che le due si
+        // accavallino sullo stesso step fisico, dove vincerebbe solo l'ultima
         // (Rigidbody.MovePosition non è cumulativo tra chiamate diverse nello stesso step).
+        bool isDashing = pendingDash.sqrMagnitude > 0.0001f;
         Vector3 delta = moveDirection * moveSpeed * Time.fixedDeltaTime + pendingDash;
         pendingDash = Vector3.zero;
 
@@ -97,7 +106,17 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        rb.MovePosition(rb.position + ClampToObstacles(delta));
+        // Durante lo scatto vero e proprio, gli Sbirro normali incontrati muoiono sul colpo
+        // invece di fermarlo (vedi MoveDashThroughEnemies); il movimento normale (a piedi)
+        // resta invece bloccato da tutto, Sbirro compresi, come sempre.
+        if (isDashing)
+        {
+            MoveDashThroughEnemies(delta);
+        }
+        else
+        {
+            rb.MovePosition(rb.position + ClampToObstacles(delta));
+        }
     }
 
     // Chiamato da PlayerSpeedAmmo quando si consuma una munizione Speed: accoda uno scatto di
@@ -109,6 +128,15 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector3 direction = moveDirection.sqrMagnitude > 0.0001f ? moveDirection.normalized : transform.forward;
         pendingDash += direction * distance;
+
+        // Fire(punto) invece del semplice Fire(): quest'ultimo punterebbe verso
+        // transform.forward, cioè la direzione di MIRA (stick destro), mentre lo scatto va
+        // nella direzione di MOVIMENTO (stick sinistro). Passando il punto di arrivo, l'onda
+        // segue anche la lunghezza reale dello scatto invece del "range" del componente.
+        if (dashVfx != null)
+        {
+            dashVfx.Fire(transform.position + direction * distance);
+        }
     }
 
     // Essendo kinematic, questo Rigidbody non viene mai fermato dalla fisica contro nessun
@@ -125,6 +153,50 @@ public class PlayerMovement : MonoBehaviour
         }
 
         return delta;
+    }
+
+    // Come ClampToObstacles, ma usata solo durante lo scatto vero e proprio: ogni Sbirro
+    // normale (EnemyHealth) incontrato lungo la traiettoria muore sul colpo e lo scatto
+    // prosegue dritto attraverso di lui, potenzialmente uccidendone più d'uno in fila.
+    // L'IdroSbirro fa eccezione ed è escluso dall'insta-kill (ha troppa vita per un "colpo
+    // secco", va affrontato con le armi normali): per lui, come per un muro o qualunque altro
+    // ostacolo, lo scatto si ferma esattamente come ClampToObstacles.
+    // Muove rb.position passo dopo passo invece di usare MovePosition (che non è cumulativo
+    // tra chiamate diverse nello stesso step, vedi Move()): essendo kinematic è sicuro
+    // spostarlo così più volte di seguito nello stesso FixedUpdate, nessun evento fisico
+    // intermedio nel frattempo, il render vede solo la posizione finale.
+    private void MoveDashThroughEnemies(Vector3 delta)
+    {
+        float remainingDistance = delta.magnitude;
+        Vector3 direction = delta.normalized;
+
+        while (remainingDistance > 0f)
+        {
+            if (!rb.SweepTest(direction, out RaycastHit hit, remainingDistance, QueryTriggerInteraction.Ignore))
+            {
+                rb.position += direction * remainingDistance;
+                return;
+            }
+
+            EnemyHealth enemyHealth = hit.collider.GetComponentInParent<EnemyHealth>();
+            bool isIdroSbirro = enemyHealth != null && enemyHealth.GetComponent<IdroSbirroHoseAttack>() != null;
+
+            if (enemyHealth != null && !isIdroSbirro)
+            {
+                rb.position += direction * hit.distance;
+                remainingDistance -= hit.distance;
+
+                // Disabilitato subito (non solo Destroy, che è rimandato a fine frame): senza
+                // questo, il prossimo SweepTest dello stesso scatto lo ricolpirebbe di nuovo a
+                // distanza ~0 e resterebbe bloccato lì invece di proseguire attraverso di lui.
+                hit.collider.enabled = false;
+                enemyHealth.TakeDamage(float.MaxValue, transform.position);
+                continue;
+            }
+
+            rb.position += direction * Mathf.Max(0f, hit.distance - obstacleSkin);
+            return;
+        }
     }
 
     private void Rotate()

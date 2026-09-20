@@ -24,13 +24,19 @@ public class EnemyRangedAttack : MonoBehaviour
     public bool IsAttacking => state == State.Attacking;
 
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 3f; // velocità sia di avvicinamento sia di fuga
+    [SerializeField] private float moveSpeed = 4.5f; // velocità sia di avvicinamento sia di fuga
+
+    [Header("Animazione")]
+    [Tooltip("Moltiplicatore di velocità dell'Animator (1 = normale): il movimento è gestito interamente da script (niente root motion), quindi il ciclo di camminata va accelerato a parte per restare a passo con moveSpeed.")]
+    [SerializeField] private float animationSpeedMultiplier = 1.5f;
 
     [Header("Target")]
     [Tooltip("Ogni quanti secondi ricalcola il bersaglio più vicino tra Player e Raver.")]
     [SerializeField] private float retargetInterval = 0.5f;
     [Tooltip("Se un Raver (vivo, non a terra) è entro questa distanza, ha sempre priorità assoluta sul Player: prima libera la strada, poi torna a puntare lui. Ignorato se alwaysTargetPlayer è attivo.")]
     [SerializeField] private float raverEngageDistance = 2f;
+    [Tooltip("Quanti metri \"pesa\" ogni altro Sbirro già impegnato con un Raver, quando ce n'è più di uno a portata di raverEngageDistance: a parità di distanza fisica si preferisce quello libero, anche se leggermente più lontano, invece di accalcarsi tutti sullo stesso (stesso meccanismo di EnemyChase).")]
+    [SerializeField] private float raverOccupancyPenalty = 2.5f;
     [Tooltip("Se attivo, il bersaglio è sempre il Player, ignorando i Raver: usato dal Robosbirro. Sbirro3 lo lascia disattivato e mantiene il comportamento standard.")]
     [SerializeField] private bool alwaysTargetPlayer = false;
 
@@ -59,6 +65,7 @@ public class EnemyRangedAttack : MonoBehaviour
     [SerializeField] private float routDirectionChangeInterval = 1.5f;
 
     private Rigidbody rb;
+    private Animator animator;
     private Transform target;
     private State state = State.Chasing;
     private float retargetTimer;
@@ -66,6 +73,10 @@ public class EnemyRangedAttack : MonoBehaviour
     private float tooCloseTimer;
     private Vector3 routDirection;
     private float routDirectionTimer;
+    private bool hasEnteredArena;
+    private Vector3[] pathPoints;
+    private int pathIndex;
+    private float pathReachRadius = 1.5f;
 
     void Awake()
     {
@@ -75,7 +86,24 @@ public class EnemyRangedAttack : MonoBehaviour
         rb.useGravity = false;
         rb.constraints |= RigidbodyConstraints.FreezePositionY;
 
+        // L'Animator sta sul modello figlio (es. RiotCop_Unity), non su questo GameObject.
+        animator = GetComponentInChildren<Animator>();
+        if (animator != null)
+        {
+            animator.speed = animationSpeedMultiplier;
+        }
+
         AcquireNearestTarget();
+    }
+
+    void OnDestroy()
+    {
+        // Se questo Sbirro muore mentre ha un Raver come bersaglio, libera subito il suo
+        // "posto" (vedi RaverHealth.EngagedCount), stesso motivo di EnemyChase.OnDestroy.
+        if (target != null && target.TryGetComponent(out RaverHealth engagedRaver))
+        {
+            engagedRaver.Disengage();
+        }
     }
 
     void FixedUpdate()
@@ -84,6 +112,14 @@ public class EnemyRangedAttack : MonoBehaviour
         // una velocità fisica residua dopo un urto resterebbe "appiccicata" al Rigidbody.
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+
+        // Percorso obbligatorio dallo spawn (vedi EnemyPath, assegnato da EnemySpawner):
+        // finché non è concluso il nemico lo segue e ignora bersagli, aggro e Raver.
+        // All'ultimo waypoint riprende l'AI normale.
+        if (FollowPath())
+        {
+            return;
+        }
 
         retargetTimer += Time.fixedDeltaTime;
         if (retargetTimer >= retargetInterval || target == null)
@@ -210,19 +246,106 @@ public class EnemyRangedAttack : MonoBehaviour
         tooCloseTimer = 0f;
     }
 
+    // Chiamato da EnemySpawner subito dopo l'Instantiate, se lo spawner ha un percorso.
+    public void SetPath(EnemyPath path)
+    {
+        if (path == null || path.Count == 0)
+        {
+            return;
+        }
+
+        pathPoints = path.GetWorldPoints();
+        pathIndex = 0;
+        pathReachRadius = path.WaypointReachRadius;
+    }
+
+    // Avanza lungo i waypoint del percorso. Ritorna true finché il percorso è in corso
+    // (movimento/rotazione già gestiti qui), false quando non c'è percorso o si è appena
+    // concluso: da lì FixedUpdate prosegue con l'AI normale.
+    private bool FollowPath()
+    {
+        if (pathPoints == null)
+        {
+            return false;
+        }
+
+        // Boss morto: si abbandona il percorso e si scappa come gli altri (vedi RoutState).
+        if (RoutState.IsActive)
+        {
+            pathPoints = null;
+            return false;
+        }
+
+        Vector3 toWaypoint = pathPoints[pathIndex] - rb.position;
+        toWaypoint.y = 0f;
+
+        if (toWaypoint.magnitude <= pathReachRadius)
+        {
+            pathIndex++;
+            if (pathIndex >= pathPoints.Length)
+            {
+                // Ultimo waypoint raggiunto: da qui insegue/attacca normalmente, e il clamp
+                // dentro l'arena torna attivo (vedi ClampToFloor / hasEnteredArena).
+                pathPoints = null;
+                hasEnteredArena = true;
+                SetTarget(null);
+                return false;
+            }
+
+            return true; // waypoint raggiunto: il prossimo frame punta al successivo
+        }
+
+        Move(toWaypoint);
+        Rotate(toWaypoint);
+        return true;
+    }
+
     private void AcquireNearestTarget()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
 
         if (alwaysTargetPlayer)
         {
-            target = player?.transform;
+            // Il Robosbirro ignora la finta: resta concentrato sul Player a prescindere da
+            // qualunque giocoliere nei paraggi.
+            SetTarget(player?.transform);
+            return;
+        }
+
+        // Un Raver che sta facendo il giocoliere (vedi RaverJuggler) ha priorità assoluta su
+        // tutto il resto se questo Sbirro gli è entrato entro il suo raggio di attrazione:
+        // è pensato apposta per attirarlo, con precedenza persino sul Player.
+        Transform attractor = RaverJuggler.FindNearestAttractor(transform.position);
+        if (attractor != null)
+        {
+            SetTarget(attractor);
             return;
         }
 
         // Non punta mai Console/DJ o SoundSystem: bersaglia solo Player e Raver.
         Transform nearestRaver = FindNearestEngageableRaver();
-        target = nearestRaver != null ? nearestRaver : player?.transform;
+        SetTarget(nearestRaver != null ? nearestRaver : player?.transform);
+    }
+
+    // Se il bersaglio cambia e quello vecchio o quello nuovo è un Raver, aggiorna il suo
+    // EngagedCount (vedi RaverHealth.Engage/Disengage): stesso meccanismo di
+    // EnemyChase.SetTarget, per non far accalcare più Sbirro (melee e a distanza insieme)
+    // sullo stesso Raver quando ce n'è un altro libero a portata.
+    private void SetTarget(Transform newTarget)
+    {
+        if (newTarget != target)
+        {
+            if (target != null && target.TryGetComponent(out RaverHealth previousRaver))
+            {
+                previousRaver.Disengage();
+            }
+            if (newTarget != null && newTarget.TryGetComponent(out RaverHealth nextRaver))
+            {
+                nextRaver.Engage();
+            }
+        }
+
+        target = newTarget;
     }
 
     // Un Raver a terra (RaverHealth.IsDown, vedi rianimazione dal cono del Player) è inerte:
@@ -231,7 +354,7 @@ public class EnemyRangedAttack : MonoBehaviour
     private Transform FindNearestEngageableRaver()
     {
         Transform nearest = null;
-        float nearestSqrDistance = float.MaxValue;
+        float bestScore = float.MaxValue;
         float sqrRaverEngageDistance = raverEngageDistance * raverEngageDistance;
 
         foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
@@ -242,10 +365,18 @@ public class EnemyRangedAttack : MonoBehaviour
             }
 
             float sqrDistance = (raver.transform.position - transform.position).sqrMagnitude;
-            if (sqrDistance <= sqrRaverEngageDistance && sqrDistance < nearestSqrDistance)
+            if (sqrDistance > sqrRaverEngageDistance)
+            {
+                continue;
+            }
+
+            // Stesso meccanismo di EnemyChase.FindNearestEngageableRaver: a parità di distanza
+            // fisica un Raver già impegnato pesa come se fosse più lontano, per preferire quello libero.
+            float score = Mathf.Sqrt(sqrDistance) + raver.EngagedCount * raverOccupancyPenalty;
+            if (score < bestScore)
             {
                 nearest = raver.transform;
-                nearestSqrDistance = sqrDistance;
+                bestScore = score;
             }
         }
 
@@ -286,7 +417,7 @@ public class EnemyRangedAttack : MonoBehaviour
     // scappare sempre verso il perimetro e restarci incollato (spingendo contro il muro
     // invisibile). Bloccando qui la posizione risultante entro i bounds del floor, la fuga
     // scivola lungo il bordo invece di restarci piantata contro.
-    private static Vector3 ClampToFloor(Vector3 position)
+    private Vector3 ClampToFloor(Vector3 position)
     {
         if (FloorBounds.Instance == null)
         {
@@ -294,6 +425,26 @@ public class EnemyRangedAttack : MonoBehaviour
         }
 
         Bounds bounds = FloorBounds.Instance.Bounds;
+
+        // Spawnato fuori dal perimetro (spawner oltre i muri, che il nemico ignora - vedi
+        // ArenaBounds.IgnoreCollisionsForEnemy), deve poter camminare "da fuori a dentro":
+        // finché non ha raggiunto una volta l'interno dell'arena non lo si clampa,
+        // altrimenti verrebbe risucchiato al bordo al primo passo. Una volta entrato il
+        // clamp torna attivo (fuga lungo il bordo, RoutState) come prima.
+        if (!hasEnteredArena)
+        {
+            bool insideArena = position.x > bounds.min.x && position.x < bounds.max.x
+                && position.z > bounds.min.z && position.z < bounds.max.z;
+            if (insideArena || RoutState.IsActive)
+            {
+                hasEnteredArena = true;
+            }
+            else
+            {
+                return position;
+            }
+        }
+
         position.x = Mathf.Clamp(position.x, bounds.min.x, bounds.max.x);
         position.z = Mathf.Clamp(position.z, bounds.min.z, bounds.max.z);
         return position;

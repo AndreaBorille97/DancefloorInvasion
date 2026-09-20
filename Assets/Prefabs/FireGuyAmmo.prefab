@@ -12,9 +12,8 @@ GameObject:
   - component: {fileID: 3707792962499090105}
   - component: {fileID: 6442074897041181644}
   - component: {fileID: 2894594930524497698}
-  - component: {fileID: 7975665988717152808}
   m_Layer: 0
-  m_Name: SoundSystemAmmo
+  m_Name: FireGuyAmmo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -113,17 +112,3 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7975665988717152808
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 158252378750918826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 867b166ee0a3f9a49974c61e2c5cf9b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SoundSystemAmmoPickup
-  soundSystem: {fileID: 0}
-  lifespan: 10

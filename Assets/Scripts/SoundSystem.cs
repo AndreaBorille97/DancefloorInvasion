@@ -19,7 +19,7 @@ using UnityEngine;
 public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
-    [SerializeField] private int maxHits = 8; // quanti colpi di Sbirro può subire prima di essere distrutto
+    [SerializeField] private int maxHits = 10; // quanti colpi di Sbirro può subire prima di essere distrutto
 
     [Header("Feedback danno")]
     [Tooltip("Se vuoto vengono cercati tutti i Renderer nei figli (le 4 casse): lampeggiano tutte insieme, non solo una, altrimenti il colpo passa facilmente inosservato.")]

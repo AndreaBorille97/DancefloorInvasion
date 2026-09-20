@@ -52,7 +52,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.5
+  m_Radius: 3.2999997
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &53408157484775895
 MonoBehaviour:
@@ -67,5 +67,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SbirroCloud
   lifespan: 3
-  radius: 1.5
-  cloudColor: {r: 0.5, g: 0.5, b: 0.55, a: 0.6}
+  radius: 1
+  cloudColor: {r: 1, g: 1, b: 1, a: 0.35}
+  particleCount: 80

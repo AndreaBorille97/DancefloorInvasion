@@ -22,6 +22,14 @@ public class PlayerSpeedAmmo : MonoBehaviour
     void Awake()
     {
         playerMovement = GetComponent<PlayerMovement>();
+
+        // L'HUD è un oggetto di scena, non nel prefab del Player: fallback all'unico
+        // FuelGaugeHUD in scena se il riferimento serializzato è andato perso.
+        if (hud == null)
+        {
+            hud = FindAnyObjectByType<FuelGaugeHUD>();
+        }
+
         UpdateUI();
     }
 

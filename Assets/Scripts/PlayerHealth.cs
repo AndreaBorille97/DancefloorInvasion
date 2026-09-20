@@ -37,6 +37,13 @@ public class PlayerHealth : MonoBehaviour, IEnemyAttackTarget
             originalColor = material.color;
         }
 
+        // Il riferimento serializzato punta a un oggetto di scena (l'HUD non è nel prefab del
+        // Player): se un rebuild del prefab l'ha perso, riagganciamo l'unico FuelGaugeHUD in scena.
+        if (hud == null)
+        {
+            hud = FindAnyObjectByType<FuelGaugeHUD>();
+        }
+
         UpdateHud();
     }
 

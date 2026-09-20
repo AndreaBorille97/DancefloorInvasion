@@ -48,9 +48,18 @@ MonoBehaviour:
   expandSpeed: 12
   coneAngle: 60
   wedgeSegments: 16
-  damage: 10
+  damage: 12
   targetMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  healAmount: 5
   waveColor: {r: 0.4, g: 0.9, b: 1, a: 0.35}
-  visualYOffset: 0.05
+  visualYOffset: 0.4
+  customVisualPrefab: {fileID: 3930084860605553824, guid: 9d55ebecf2b0a36478ea299c13a745b3, type: 3}
+  alsoShowFlatWave: 0
+  customVisualEulerAngles: {x: 90, y: 0, z: 0}
+  customVisualScaleMultiplier: 0.4
+  customVisualMinScaleFraction: 0.06
+  customVisualForwardFollow: 0.5
+  customVisualForwardOffset: 1
+  customVisualFadeOut: 1

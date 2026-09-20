@@ -127,7 +127,6 @@ GameObject:
   - component: {fileID: 5796036035945533992}
   - component: {fileID: 7316872207387573269}
   - component: {fileID: 6892787190329730436}
-  - component: {fileID: -8699652943623646385}
   m_Layer: 0
   m_Name: Sbirro3V2
   m_TagString: Untagged
@@ -283,31 +282,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1441012480d33b9fbab23612a80607ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyRangedAttack
-  moveSpeed: 3
+  moveSpeed: 4.5
   retargetInterval: 0.5
   stopDistance: 14
   retreatDistance: 8
   retreatDelay: 2
   projectilePrefab: {fileID: 7577395128467870798, guid: 802f57192be6e7344b1de580320a79d8, type: 3}
-  fireRate: 0.7
-  firePoint: {fileID: 0}
---- !u!114 &-8699652943623646385
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4174889273833619587}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1441012480d33b9fbab23612a80607ae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyRangedAttack
-  moveSpeed: 3
-  retargetInterval: 0.5
-  stopDistance: 14
-  retreatDistance: 8
-  retreatDelay: 2
-  projectilePrefab: {fileID: 0}
   fireRate: 0.7
   firePoint: {fileID: 0}

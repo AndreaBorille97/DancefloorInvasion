@@ -126,12 +126,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
   enemyOptions:
-  - prefab: {fileID: 870143441880640016, guid: a63bbc24a41ef3542bdab658f64d66da, type: 3}
+  - prefab: {fileID: 7459861837365384441, guid: 5dc2ffef8f0df964eb76e0cae3e2045d, type: 3}
     weight: 10
+    unlockTime: 0
   - prefab: {fileID: 2723642857579834634, guid: 2724a547f4a0ede4785e4a57f40e68e6, type: 3}
     weight: 1
+    unlockTime: 60
   - prefab: {fileID: 4174889273833619587, guid: 511a0c544961e35449269b94512001fd, type: 3}
     weight: 0.5
+    unlockTime: 120
   spawnInterval: 3
   intervalDecreasePerSecond: 0.003
   minSpawnInterval: 0.3
@@ -142,4 +145,4 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   maxSpawnAttempts: 10
-  floor: {fileID: 0}
+  floor: {fileID: 1457251424863415286, guid: 780f53462e7f16a4eb6154678b788d67, type: 3}

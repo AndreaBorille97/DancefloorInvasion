@@ -46,6 +46,26 @@ public class RaverAttack : MonoBehaviour
         damage *= factor;
     }
 
+    // Usato da RaverJuggler quando il Raver viene mandato a fare il giocoliere: impostare
+    // enabled = false da solo NON basta a impedire un colpo già in carica, perché disabilitare
+    // un componente non ferma una sua coroutine già avviata con StartCoroutine. StopAllCoroutines
+    // (non solo StopCoroutine(attackRoutine)) copre anche la breve coda di cooldown dopo un
+    // colpo appena andato a segno, dove AttackRoutine è ancora viva ma attackRoutine è già
+    // stato azzerato a null, e ferma anche un eventuale FlashRoutine ancora in corso.
+    public void CancelAttack()
+    {
+        StopAllCoroutines();
+        attackRoutine = null;
+        currentTarget = null;
+        onCooldown = false;
+        flashRoutine = null;
+
+        if (material != null)
+        {
+            material.color = originalColor;
+        }
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         TryStartAttack(collision.collider);
@@ -71,6 +91,15 @@ public class RaverAttack : MonoBehaviour
 
     private void TryStartAttack(Collider other)
     {
+        // Disabilitare il componente (vedi RaverJuggler.BeginJuggling) non basta a impedire
+        // che Unity continui a chiamare OnCollisionEnter/Stay mentre resta a contatto: senza
+        // questo controllo esplicito, un Raver fermo in mezzo agli Sbirro (es. il giocoliere,
+        // che li attira apposta) continuerebbe comunque a caricare e infliggere colpi.
+        if (!enabled)
+        {
+            return;
+        }
+
         if (attackRoutine != null || onCooldown)
         {
             return;
@@ -90,8 +119,15 @@ public class RaverAttack : MonoBehaviour
     {
         yield return new WaitForSeconds(windupDuration);
 
-        currentTarget.TakeDamage(damage);
-        PlayAttackFlash();
+        // Il bersaglio potrebbe essere stato distrutto da un'altra fonte durante la carica
+        // (es. il Player) senza che OnCollisionExit facesse in tempo a girare: currentTarget
+        // è un'interfaccia, non un riferimento diretto a UnityEngine.Object, quindi va
+        // controllato passando per Object per rilevare la distruzione nativa.
+        if ((currentTarget as Object) != null)
+        {
+            currentTarget.TakeDamage(damage, transform.position);
+            PlayAttackFlash();
+        }
         attackRoutine = null;
         currentTarget = null;
 

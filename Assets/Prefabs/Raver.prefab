@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 4406335510277569870}
   - component: {fileID: 2104162680818712043}
   - component: {fileID: 2478277215555340813}
+  - component: {fileID: 2478277215555340814}
   m_Layer: 0
   m_Name: Raver
   m_TagString: Untagged
@@ -189,8 +190,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fd910ba134df4a4c857b485228d339b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RaverHealth
-  maxHealth: 200
+  maxHealth: 50
   damagePerHit: 25
+  groupBuffColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!114 &2478277215555340813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -204,3 +206,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RaverDrugBuff
   drugMaterial: {fileID: 2100000, guid: bf3fc917c61b4f343915246bfc65aa8c, type: 2}
+--- !u!114 &2478277215555340814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7268827633277165515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f8c4a6e1b9d73f5c0a8e4b7d1f6c3a9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RaverJuggler
+  attractionRadius: 6
+  healthBuffMultiplier: 1.2
+  damageBuffMultiplier: 1.2
+  arrivalDistance: 1.2
+  dangerRadius: 2.5
+  dangerCheckInterval: 0.25
+  dangerAreaColor: {r: 1, g: 0.15, b: 0.15, a: 0.22}
+  attractionAreaColor: {r: 1, g: 0.65, b: 0.1, a: 0.12}

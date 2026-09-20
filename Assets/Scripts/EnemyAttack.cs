@@ -21,6 +21,13 @@ public class EnemyAttack : MonoBehaviour
     private Coroutine attackRoutine;
     private IEnemyAttackTarget currentTarget;
     private bool onCooldown;
+    private Animator animator;
+
+    void Awake()
+    {
+        // L'Animator sta sul modello figlio (es. RiotCop_Unity), non su questo GameObject.
+        animator = GetComponentInChildren<Animator>();
+    }
 
     void OnCollisionEnter(Collision collision)
     {
@@ -67,6 +74,11 @@ public class EnemyAttack : MonoBehaviour
 
     private IEnumerator AttackRoutine()
     {
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+
         yield return new WaitForSeconds(windupDuration);
 
         currentTarget.TakeHit();

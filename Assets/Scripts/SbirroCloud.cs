@@ -15,24 +15,34 @@ public class SbirroCloud : MonoBehaviour
     [SerializeField] private float lifespan = 3f; // quanto resta a terra prima di sparire
 
     [Header("Aspetto")]
-    [SerializeField] private float radius = 2f; // raggio della nuvola, sia visivo sia del trigger
-    [SerializeField] private Color cloudColor = new Color(0.5f, 0.5f, 0.55f, 0.6f);
+    [Tooltip("Raggio base della nuvola: da qui si ricavano sia la dimensione/sparsità dei puffi visivi sia il raggio vero del trigger (vedi DamageRadius), che quindi restano sempre coerenti tra loro senza doverli ritarare a mano separatamente.")]
+    [SerializeField] private float radius = 2f;
+    [SerializeField] private Color cloudColor = new Color(1f, 1f, 1f, 0.35f);
+    [Tooltip("Quanti puffi di fumo compongono la nuvola.")]
+    [SerializeField] private int particleCount = 80;
+
+    // Stessi moltiplicatori usati in CreateVisual per shape.radius e per la dimensione
+    // massima dei puffi: il trigger deve arrivare fin dove il fumo si vede davvero (il bordo
+    // di un puffo, non solo il suo punto d'origine), altrimenti si potrebbe camminarci dentro
+    // senza subire danno mentre visivamente si è ancora in mezzo alla nuvola.
+    private const float ShapeSpreadMultiplier = 1.3f;
+    private const float MaxParticleSizeMultiplier = 1.8f;
+    private float DamageRadius => radius * (ShapeSpreadMultiplier + MaxParticleSizeMultiplier * 0.5f);
 
     private readonly HashSet<Collider> alreadyHit = new HashSet<Collider>();
     private float elapsed;
-    private Material visualMaterial;
 
     void Awake()
     {
         SphereCollider trigger = GetComponent<SphereCollider>();
         trigger.isTrigger = true;
-        trigger.radius = radius;
+        trigger.radius = DamageRadius;
 
         CreateVisual();
     }
 
-    // Tiene il collider sincronizzato con radius anche in editor (non solo a runtime via
-    // Awake): senza, modificando radius nell'Inspector il valore serializzato del
+    // Tiene il collider sincronizzato con DamageRadius anche in editor (non solo a runtime
+    // via Awake): senza, modificando radius nell'Inspector il valore serializzato del
     // SphereCollider resta quello vecchio finché non si va in Play, disallineando hitbox
     // e raggio visivo nel frattempo (successo con SbirroNuvola: radius 1.5, m_Radius 2).
     void OnValidate()
@@ -40,19 +50,13 @@ public class SbirroCloud : MonoBehaviour
         SphereCollider trigger = GetComponent<SphereCollider>();
         if (trigger != null)
         {
-            trigger.radius = radius;
+            trigger.radius = DamageRadius;
         }
     }
 
     void Update()
     {
         elapsed += Time.deltaTime;
-
-        // Sfuma via via che si avvicina alla scadenza, stesso trattamento di SoundWaveProjectile.
-        float fade = 1f - Mathf.Clamp01(elapsed / lifespan);
-        Color fadedColor = cloudColor;
-        fadedColor.a *= fade;
-        visualMaterial.color = fadedColor;
 
         if (elapsed >= lifespan)
         {
@@ -82,23 +86,66 @@ public class SbirroCloud : MonoBehaviour
         target.TakeHit();
     }
 
-    // Genera una sfera appiattita e semitrasparente, senza bisogno di un mesh/materiale
-    // dedicato in Assets: stessa tecnica (Sprites/Default) usata da SoundWaveProjectile.
+    // Un ParticleSystem invece della vecchia sfera semitrasparente piatta: quella, essendo
+    // dello stesso grigio del pavimento placeholder, risultava quasi invisibile (si vedeva
+    // solo come una leggera ombra). Puffi di fumo separati, con una lieve deriva verso l'alto,
+    // si notano molto di più e sfumano da soli via ColorOverLifetime invece che aggiornando
+    // ogni frame un materiale condiviso (stesso approccio di EnemyHealth.SpawnDeathDust, qui
+    // però senza burst direzionale: i puffi restano fermi sull'area colpita).
     private void CreateVisual()
     {
         GameObject visualObject = new GameObject("CloudVisual");
         visualObject.transform.SetParent(transform, false);
-        visualObject.transform.localScale = new Vector3(radius * 2f, radius * 1.2f, radius * 2f);
 
-        MeshFilter meshFilter = visualObject.AddComponent<MeshFilter>();
-        meshFilter.mesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
+        ParticleSystem particles = visualObject.AddComponent<ParticleSystem>();
 
-        MeshRenderer meshRenderer = visualObject.AddComponent<MeshRenderer>();
-        meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        meshRenderer.receiveShadows = false;
+        // AddComponent lo fa partire subito (Play On Awake di default): senza fermarlo prima,
+        // il main module sotto risulterebbe "in play" e Unity rifiuterebbe di cambiargli la
+        // durata ("Setting the duration while system is still playing is not supported").
+        particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        visualMaterial = new Material(Shader.Find("Sprites/Default"));
-        visualMaterial.color = cloudColor;
-        meshRenderer.material = visualMaterial;
+        ParticleSystem.MainModule main = particles.main;
+        main.playOnAwake = false;
+        main.loop = false;
+        main.duration = lifespan;
+        main.startLifetime = lifespan;
+        main.startSpeed = 0.15f; // deriva lentissima: devono restare ammassati, non allargarsi
+        main.startSize = new ParticleSystem.MinMaxCurve(radius * 1.1f, radius * MaxParticleSizeMultiplier); // grosse e sovrapposte, non puntini separati
+        main.startColor = cloudColor;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.gravityModifier = -0.01f; // sale appena, resta bassa invece di alzarsi
+
+        ParticleSystem.EmissionModule emission = particles.emission;
+        emission.rateOverTime = 0f;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, particleCount) });
+
+        ParticleSystem.ShapeModule shape = particles.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        // Origine sparsa su gran parte del raggio della nuvola (non più ammassata al centro):
+        // essendo le particelle già grosse e sovrapposte (vedi startSize sopra), restano
+        // comunque un'unica massa ma coprono un'area più estesa invece di un ammasso piccolo.
+        shape.radius = radius * ShapeSpreadMultiplier;
+        // Schiacciata sull'asse verticale: un'origine sferica piena farebbe partire dei puffi
+        // anche parecchio sopra il pavimento, una nuvola bassa deve restare vicina a terra.
+        shape.scale = new Vector3(1f, 0.3f, 1f);
+
+        // Sfuma da sola nel tempo (alpha piena all'inizio, 0 a fine vita): stessa curva usata
+        // prima manualmente su Update(), ma gestita per particella invece che sul materiale.
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        Gradient gradient = new Gradient();
+        gradient.SetKeys(
+            new[] { new GradientColorKey(cloudColor, 0f), new GradientColorKey(cloudColor, 1f) },
+            new[] { new GradientAlphaKey(cloudColor.a, 0f), new GradientAlphaKey(0f, 1f) });
+        colorOverLifetime.color = gradient;
+
+        ParticleSystemRenderer particleRenderer = visualObject.GetComponent<ParticleSystemRenderer>();
+        particleRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        // Bordo sfumato invece del disco secco di RoundParticleTexture (quello, con un bordo
+        // netto, faceva sembrare ogni puffo una bolla di sapone invece che fumo soffice).
+        particleRenderer.material.mainTexture = SoftParticleTexture.Get();
+        particleRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+        particles.Play();
     }
 }

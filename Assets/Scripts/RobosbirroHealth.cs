@@ -45,9 +45,15 @@ public class RobosbirroHealth : MonoBehaviour, IDamageable
             material = targetRenderer.material; // istanza dedicata: non modifica l'asset condiviso
             originalColor = material.color;
         }
+
+        // Come gli Sbirro normali (vedi EnemyHealth): ignora i muri dell'arena così può
+        // attraversarli. Innocuo anche se spawna già dentro dal RobosbirroSpawner.
+        ArenaBounds.IgnoreCollisionsForEnemy(gameObject);
     }
 
-    public void TakeDamage(float amount)
+    // sourcePosition non serve al boss (nessun effetto di morte direzionale come per
+    // EnemyHealth), ma va accettato per rispettare IDamageable.
+    public void TakeDamage(float amount, Vector3 sourcePosition)
     {
         currentHealth -= amount;
         PlayHitFlash();
@@ -61,7 +67,7 @@ public class RobosbirroHealth : MonoBehaviour, IDamageable
     // Chiamato da CamperVehicle quando lo tocca da guidato.
     public void TakeCamperHit()
     {
-        TakeDamage(camperDamage);
+        TakeDamage(camperDamage, transform.position);
     }
 
     private void Die()
