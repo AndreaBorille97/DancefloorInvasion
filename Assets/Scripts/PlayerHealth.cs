@@ -1,14 +1,15 @@
 using System.Collections;
 using UnityEngine;
 
-// Da mettere sul Player. Il Player muore al terzo colpo subito, a prescindere dal
-// danno del singolo attacco (non è un sistema a punti vita). Mostra anche un rapido
-// lampo di colore quando subisce un colpo: non c'è ancora un'animazione di hit,
-// questo basta a farlo percepire finché non verrà sostituito da quella vera.
+// Da mettere sul Player. Il Player muore dopo maxHits colpi subiti (8, uno per ogni segmento
+// della barra vita nell'HUD), a prescindere dal danno del singolo attacco: non è un sistema a
+// punti vita. Mostra anche un rapido lampo di colore quando subisce un colpo: non c'è ancora
+// un'animazione di hit, questo basta a farlo percepire finché non verrà sostituito da quella.
 public class PlayerHealth : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
-    [SerializeField] private int maxHits = 3; // quanti colpi può subire prima di morire
+    [Tooltip("Quanti colpi può subire prima di morire. Tienilo uguale al numero di segmenti della barra vita nell'HUD (8): così ogni colpo ne spegne esattamente uno.")]
+    [SerializeField] private int maxHits = 8;
 
     [Header("Feedback danno")]
     [SerializeField] private Renderer targetRenderer; // se vuoto viene cercato su questo GameObject/figli
@@ -46,6 +47,10 @@ public class PlayerHealth : MonoBehaviour, IEnemyAttackTarget
 
         UpdateHud();
     }
+
+    // IEnemyAttackTarget: un Player morto non va più toccato. Evita che gli Sbirro intorno
+    // restino a caricare colpi a vuoto mentre parte la schermata di sconfitta.
+    public bool CanBeAttacked => !isDead;
 
     public void TakeHit()
     {

@@ -7,8 +7,9 @@ using UnityEngine;
 // solo EnemyHealth sui bersagli colpiti. Può essere danneggiato solo da due fonti:
 // - Raver (RaverAttack), tramite IDamageable.TakeDamage, come un colpo normale;
 // - Camper (CamperVehicle, mentre un Raver lo pilota), che toglie il quadruplo del danno
-//   di un colpo di Raver normale, vedi TakeCamperHit(). Stesso schema anche per gli Sbirro
-//   normali (EnemyHealth.TakeCamperHit): il Camper non fa più insta-kill su nessuno dei due.
+//   di un colpo di Raver normale, vedi TakeCamperHit(). Gli Sbirro normali invece muoiono in
+//   una passata sola (EnemyHealth.TakeCamperHit toglie una frazione della vita massima): qui il
+//   danno resta fisso apposta, perché una frazione della vita sarebbe troppo forte sul boss.
 public class RobosbirroHealth : MonoBehaviour, IDamageable
 {
     [Header("Vita")]

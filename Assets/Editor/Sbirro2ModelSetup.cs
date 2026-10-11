@@ -52,7 +52,7 @@ public static class Sbirro2ModelSetup
     // Quanto è grande lo Sbirro2 rispetto allo Sbirro1: 1 = identico, 1.1 = un 10% più alto.
     // Cresce di pari passo anche la capsula di collisione, altrimenti il modello sborderebbe dal
     // proprio ingombro fisico e gli altri gli entrerebbero dentro di quella differenza.
-    private const float SizeVsSbirro1 = 1.1f;
+    private const float SizeVsSbirro1 = 1f;
 
     // Quanto tirare su il colore del corpo, che di suo viene spento. Tre leve che fanno cose
     // diverse, ed è la seconda quella che conta per la pelle:
@@ -63,13 +63,21 @@ public static class Sbirro2ModelSetup
     //    torna rosa. 0 = nessuna correzione, 0.1 = il rosso sale del 10% e il blu scende del 10%;
     //  - EmissionBoost aggiunge un filo della texture come luce propria, con la stessa tinta
     //    calda: solleva la parte in ombra, che è dove i colori si spengono davvero.
-    private const float BaseColorBoost = 1.15f;
+    private const float BaseColorBoost = 1.25f;
     private const float WarmthBoost = 0.1f;
-    private const float EmissionBoost = 0.16f;
+    private const float EmissionBoost = 0.24f;
 
     // Lucentezza del corpo. Quella di default (0.5) mette sulla divisa un velo di riflesso
     // grigiastro che slava i colori: un tessuto riflette poco.
     private const float BodySmoothness = 0.25f;
+
+    // Dove finiscono i materiali dell'equipaggiamento una volta tirati fuori dall'FBX.
+    private const string EquipmentFolder = "Assets/Material/Sbirro2";
+
+    // Quanto si accendono scudo, acciaio, nylon e manganello: una frazione del loro stesso
+    // colore, aggiunta come luce propria. Non si tocca il colore base — quello È l'oggetto, e
+    // schiarirlo lo scolorirebbe: si aggiunge solo un fondo luminoso che li stacca dal buio.
+    private const float EquipmentEmission = 0.2f;
 
     // Le mosse, riconosciute dal nome della clip. Servono ad accoppiare le clip dello Sbirro2 con
     // gli stati del controller dello Sbirro1, che puntano alle clip omonime dello Sbirro1.
@@ -107,6 +115,7 @@ public static class Sbirro2ModelSetup
 
         SetUpBodyMaterial(bodyMaterial);
         ConfigureImporter(bodyMaterial);
+        BrightenEquipmentMaterials();
 
         AnimatorController controller = BuildController();
         if (controller == null)
@@ -192,8 +201,14 @@ public static class Sbirro2ModelSetup
 
             PrefabUtility.SaveAsPrefabAsset(target, TargetPrefabPath);
 
+            // Rimisurato alla fine: è il controllo che la taglia sia davvero quella voluta. Se
+            // questo numero non combacia con l'altezza dello Sbirro1, qualcosa nella misura non va.
+            TryMeasure(instance, out Bounds finalBounds);
+
             Debug.Log(
-                $"[Sbirro2] Modello montato. Scala {scaleFactor:0.###}, altezza {targetHeight:0.##} " +
+                $"[Sbirro2] Modello montato. Alto {finalBounds.size.y:0.##} a fronte dei " +
+                $"{template.ModelWorldHeight:0.##} dello Sbirro1. " +
+                $"Scala {scaleFactor:0.###}, altezza voluta {targetHeight:0.##} " +
                 $"({SizeVsSbirro1:0.##}x lo Sbirro1, che sta a {template.ModelWorldHeight:0.##}), " +
                 $"controller {controller.name} con le clip del modello. " +
                 $"Materiali rimasti incorporati nell'FBX: {string.Join(", ", ReadMaterialNames())} " +
@@ -449,6 +464,73 @@ public static class Sbirro2ModelSetup
         importer.SaveAndReimport();
     }
 
+    // Gli altri materiali del modello — scudo, acciaio, nylon, plastica, manganello — nascono
+    // DENTRO l'FBX, e finché stanno lì non si possono ritoccare: ogni reimport del modello li
+    // rigenera come sono nel file, cancellando qualsiasi modifica. Vanno quindi prima estratti
+    // come asset veri del progetto; Unity da sé li rimappa sul modello, quindi il modello
+    // continua a usare gli stessi materiali, solo che adesso sono nostri.
+    //
+    // Poi vengono accesi. Non schiarendo il colore base — quello È il colore dell'oggetto, e
+    // alzarlo lo scolorirebbe verso il bianco — ma aggiungendo una frazione di quel colore come
+    // luce propria: l'oggetto resta del suo colore e si stacca dal buio. Al crepuscolo è la
+    // differenza fra uno scudo che si vede e una macchia nera.
+    //
+    // L'emissione viene IMPOSTATA e non sommata, quindi rilanciare il comando non accumula:
+    // ricalcola sempre lo stesso valore.
+    private static void BrightenEquipmentMaterials()
+    {
+        if (!AssetDatabase.IsValidFolder(EquipmentFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/Material", "Sbirro2");
+        }
+
+        bool extracted = false;
+        foreach (Material embedded in AssetDatabase.LoadAllAssetsAtPath(ModelPath).OfType<Material>())
+        {
+            string path = $"{EquipmentFolder}/{embedded.name}.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path) != null)
+            {
+                continue;
+            }
+
+            string error = AssetDatabase.ExtractAsset(embedded, path);
+            if (string.IsNullOrEmpty(error))
+            {
+                extracted = true;
+            }
+            else
+            {
+                Debug.LogWarning($"[Sbirro2] Non riesco a estrarre il materiale {embedded.name}: {error}");
+            }
+        }
+
+        // L'estrazione cambia le impostazioni di import del modello: senza reimport, il modello
+        // continuerebbe a usare le vecchie copie interne.
+        if (extracted)
+        {
+            AssetDatabase.WriteImportSettingsIfDirty(ModelPath);
+            AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate);
+        }
+
+        foreach (string guid in AssetDatabase.FindAssets("t:Material", new[] { EquipmentFolder }))
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(guid));
+            if (material == null || !material.HasProperty("_EmissionColor"))
+            {
+                continue;
+            }
+
+            Color own = material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") : Color.grey;
+
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", own * EquipmentEmission);
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            EditorUtility.SetDirty(material);
+        }
+
+        AssetDatabase.SaveAssets();
+    }
+
     private static string[] ReadMaterialNames()
     {
         return AssetDatabase.LoadAllAssetsAtPath(ModelPath)
@@ -458,8 +540,18 @@ public static class Sbirro2ModelSetup
             .ToArray();
     }
 
-    // Ingombro dei Renderer sotto target, saltando quelli senza geometria (un Renderer vuoto ha
-    // un ingombro nullo piantato sul pivot e falserebbe la misura verso il basso).
+    // Ingombro del modello, misurato sulla MESH e non su Renderer.bounds.
+    //
+    // Renderer.bounds di una mesh skinnata non è una proprietà del modello: è l'ingombro della
+    // posa in cui si trova adesso, e in una scena di anteprima come questa dipende da se e quando
+    // l'Animator ha campionato una clip. Misurando di lì, lo stesso identico modello risultava
+    // alto 2.28 in un lancio e 1.69 in quello dopo — un 26% di differenza, che il comando
+    // compensava ingrandendolo, ed è il motivo per cui lo Sbirro2 veniva fuori gigante.
+    //
+    // mesh.bounds invece è l'ingombro dei vertici come sono scritti nel file, la posa di
+    // legatura: non cambia mai. Trasformato con la matrice del Renderer dà una misura ripetibile,
+    // uguale ad ogni lancio e confrontabile fra due modelli diversi — che è tutto quello che
+    // serve per far venire lo Sbirro2 della taglia dello Sbirro1.
     private static bool TryMeasure(GameObject target, out Bounds bounds)
     {
         bounds = new Bounds(target.transform.position, Vector3.zero);
@@ -467,19 +559,39 @@ public static class Sbirro2ModelSetup
 
         foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>())
         {
-            if (renderer.bounds.size.sqrMagnitude <= 0.000001f)
+            Mesh mesh = renderer is SkinnedMeshRenderer skinned
+                ? skinned.sharedMesh
+                : renderer.GetComponent<MeshFilter>()?.sharedMesh;
+
+            // Un Renderer senza mesh (sul segnaposto ne resta uno svuotato) ha un ingombro nullo
+            // piantato sul pivot: contarlo falserebbe la misura verso il basso.
+            if (mesh == null || mesh.bounds.size.sqrMagnitude <= 0.000001f)
             {
                 continue;
             }
 
-            if (!found)
+            // Gli 8 spigoli e non centro/dimensioni: se il Renderer è ruotato, trasformare solo
+            // il centro darebbe un riquadro storto.
+            Bounds local = mesh.bounds;
+            Matrix4x4 toWorld = renderer.transform.localToWorldMatrix;
+            for (int corner = 0; corner < 8; corner++)
             {
-                bounds = renderer.bounds;
-                found = true;
-                continue;
-            }
+                Vector3 offset = new Vector3(
+                    (corner & 1) == 0 ? -local.extents.x : local.extents.x,
+                    (corner & 2) == 0 ? -local.extents.y : local.extents.y,
+                    (corner & 4) == 0 ? -local.extents.z : local.extents.z);
+                Vector3 world = toWorld.MultiplyPoint3x4(local.center + offset);
 
-            bounds.Encapsulate(renderer.bounds);
+                if (!found)
+                {
+                    bounds = new Bounds(world, Vector3.zero);
+                    found = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(world);
+                }
+            }
         }
 
         return found;

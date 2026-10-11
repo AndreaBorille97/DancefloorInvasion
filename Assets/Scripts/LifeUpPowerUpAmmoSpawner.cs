@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Da associare a un GameObject "spawner" dedicato in scena (stesso approccio di
-// CamperSpawner/RaverSpawner/DrugSpawner/SpeedUpPowerUpAmmoSpawner, non va messo su
+// CamperSpawner/RaverSpawner/DrugSpawner/AmmoSpawner, non va messo su
 // GameManager né su "floor"): ogni tot secondi, scelti a caso tra 1 e maxSpawnInterval,
 // istanzia un LifeUpPowerUpAmmo in un punto casuale sopra il pavimento (i confini della
 // mappa sono letti dai bounds del Renderer di "floor").

@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 // Da mettere sul prefab del nemico (lo stesso che spawna EnemySpawner).
 // Il nemico insegue sul piano orizzontale (X/Z) uno tra Console/DJ e SoundSystem (i due
 // obiettivi da proteggere, assegnato allo spawn: vedi GetAssignedObjective). Con probabilità
-// 1/N (N = guardie vive rimaste su quell'obiettivo, vedi CountAliveGuards) punta dritto
+// guardie a terra / guardie totali su quell'obiettivo (vedi GetGuardsFor) punta dritto
 // all'obiettivo invece che alla propria corsia di guardia (vedi FindLaneRaver): in quel caso
 // non cerca né aggira i Raver vivi, ingaggiandoli solo se ci collide fisicamente lungo la
 // strada. Il tiro (vedi AcquireNearestTarget/attacksObjectiveDirectly) si ritira ad ogni
@@ -21,6 +22,8 @@ public class EnemyChase : MonoBehaviour
     [SerializeField] private float moveSpeed = 4.5f; // velocità di inseguimento (unità al secondo)
     [Tooltip("Distanza dal punto di avvicinamento (vedi FixedUpdate) sotto la quale il nemico smette di avvicinarsi ulteriormente. Senza questa soglia il nemico continuerebbe a spingersi verso il bersaglio ad ogni FixedUpdate anche a contatto avvenuto: dato che sia i nemici sia i Raver sono Rigidbody non kinematic, quella spinta continua li sposta fisicamente invece di restarci semplicemente a contatto. Tienila di poco inferiore alla somma dei raggi dei collider di nemico e bersaglio, altrimenti non lo tocca mai e EnemyAttack (a contatto) non parte.")]
     [SerializeField] private float stopDistance = 0.9f;
+    [Tooltip("A quanti metri dalla faccia di Console/SoundSystem il nemico si ferma per attaccarla, misurati dal bordo del suo collider (non dal centro, quindi vale uguale per nemici piccoli e grandi). L'attacco agli obiettivi parte da qui, senza contatto fisico (vedi EnemyAttack/IsAtObjective): così nessuno si schiaccia contro le casse o ci si infila dentro.")]
+    [SerializeField] private float objectiveStandoff = 1f;
 
     [Header("Animazione")]
     [Tooltip("Moltiplicatore di velocità dell'Animator (1 = normale): il movimento è gestito interamente da script (niente root motion), quindi il ciclo di camminata va accelerato a parte per restare a passo con moveSpeed.")]
@@ -80,14 +83,14 @@ public class EnemyChase : MonoBehaviour
     // false = SoundSystem (vedi GetAssignedObjective). Fisso per tutta la vita del nemico,
     // così non cambia idea ad ogni retarget.
     private bool assignedConsole;
-    // Obiettivo e numero di guardie vive su cui si basava l'ultimo tiro a sorte "vado dritto
+    // Obiettivo e numero di guardie a terra su cui si basava l'ultimo tiro a sorte "vado dritto
     // all'obiettivo invece che alla mia corsia" (vedi AcquireNearestTarget/
     // attacksObjectiveDirectly): si ritira solo quando uno dei due cambia, non ad ogni
     // retarget (altrimenti col tempo finirebbe comunque per "vincere" prima o poi, vanificando
-    // la probabilità 1/N). Così ogni guardia che cade dà una nuova chance, con la probabilità
-    // aggiornata, ai nemici che non l'hanno ancora vinta.
+    // la probabilità a terra/totali). Così ogni guardia che cade dà una nuova chance, con la
+    // probabilità aggiornata, ai nemici che non l'hanno ancora vinta.
     private Transform lastRollObjective;
-    private int lastRollGuardCount = -1;
+    private int lastRollDownCount = -1;
     // true se il tiro ha deciso di puntare dritto all'obiettivo invece che alla propria corsia
     // di guardia: in quel caso il nemico non cerca né aggira i Raver vivi, li ingaggia solo se
     // ci collide fisicamente lungo la strada (vedi EnemyAttack, indipendente da questo script).
@@ -103,6 +106,37 @@ public class EnemyChase : MonoBehaviour
     // l'unico bersaglio che non si difende e non carica mai, quindi l'ultimo tratto deve
     // chiuderlo il nemico (vedi FixedUpdate).
     private bool isChasingAttractor;
+    // true quando il bersaglio è Console/SoundSystem e il nemico è arrivato al suo punto di
+    // attacco (a objectiveStandoff dalla faccia): letto da EnemyAttack, che da lì fa partire
+    // l'attacco all'obiettivo senza bisogno di toccarlo. Ricalcolato ad ogni FixedUpdate.
+    private bool isAtObjective;
+    // Quanto può scostarsi dal punto di attacco (spinto da altri nemici o dai Raver) restando
+    // comunque "arrivato": senza margine la carica si interromperebbe ad ogni urto.
+    private const float ObjectiveReachTolerance = 0.75f;
+
+    // Letto per non cambiare bersaglio a metà attacco (vedi il retarget in FixedUpdate).
+    private EnemyAttack enemyAttack;
+
+    // Percorso sul NavMesh verso il punto di avvicinamento (vedi GetNextWaypoint): ricalcolato
+    // ogni PathRefreshInterval secondi, o prima se la meta si è spostata parecchio.
+    private NavMeshPath navPath;
+    private readonly Vector3[] pathCorners = new Vector3[32];
+    private int pathCornerCount;
+    private int pathCornerIndex;
+    private float pathRefreshTimer;
+    private Vector3 pathGoal;
+    private const float PathRefreshInterval = 0.25f;
+    // Quanto può spostarsi la meta prima di forzare un nuovo percorso senza aspettare il timer.
+    private const float PathGoalMoveThreshold = 1f;
+    // Distanza entro cui un angolo del percorso conta come raggiunto e si passa al successivo.
+    private const float PathCornerReachRadius = 0.3f;
+    // Quanto lontano dal NavMesh si cerca il punto più vicino, per partenza e meta: copre la
+    // differenza d'altezza fra pivot del nemico e pavimento e l'eventuale sconfinamento dentro
+    // il margine di un ostacolo.
+    private const float NavMeshSampleDistance = 3f;
+
+    public Transform Target => target;
+    public bool IsAtObjective => isAtObjective;
 
     void Awake()
     {
@@ -141,6 +175,8 @@ public class EnemyChase : MonoBehaviour
             transform.position = position;
         }
 
+        enemyAttack = GetComponent<EnemyAttack>();
+        navPath = new NavMeshPath();
         AcquireNearestTarget();
     }
 
@@ -163,6 +199,7 @@ public class EnemyChase : MonoBehaviour
         // azzeriamo resta "appiccicata" al Rigidbody e lo fa scivolare per inerzia dopo il tocco.
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+        isAtObjective = false;
 
         // Percorso obbligatorio dallo spawn (vedi EnemyPath, assegnato da EnemySpawner):
         // finché non è concluso il nemico lo segue e ignora bersagli, aggro del Player e
@@ -172,8 +209,13 @@ public class EnemyChase : MonoBehaviour
             return;
         }
 
+        // Finché l'attacco è in corso, animazione compresa (EnemyAttack.IsAttacking), il
+        // bersaglio resta quello: senza questo blocco, ad esempio, il Player che entra in aggro
+        // strappava il nemico a metà animazione dal Raver o dall'obiettivo che stava colpendo.
+        // Il timer continua a scorrere, così finito l'attacco il retarget scatta subito.
         retargetTimer += Time.fixedDeltaTime;
-        if (retargetTimer >= retargetInterval || target == null)
+        bool isMidAttack = enemyAttack != null && enemyAttack.IsAttacking;
+        if (target == null || (retargetTimer >= retargetInterval && !isMidAttack))
         {
             retargetTimer = 0f;
             AcquireNearestTarget();
@@ -213,7 +255,7 @@ public class EnemyChase : MonoBehaviour
         // Verso un Raver o il Player si punta invece sempre al vero punto più vicino: lì lo
         // spargimento non serve, anzi confonderebbe l'ingaggio ravvicinato.
         Vector3 approachReference = GetApproachReference(target);
-        Vector3 approachPoint = targetCollider != null ? targetCollider.ClosestPoint(approachReference) : target.position;
+        Vector3 approachPoint = GetApproachPoint(approachReference, out bool isDetour);
         lastApproachPoint = approachPoint; // per il debug via gizmo, vedi OnDrawGizmosSelected/OnDrawGizmos
         Vector3 toTarget = approachPoint - rb.position;
         toTarget.y = 0f; // il movimento resta sul piano orizzontale
@@ -227,8 +269,108 @@ public class EnemyChase : MonoBehaviour
         // senza toccarlo mai, e l'attacco — che scatta solo per collisione fisica, vedi
         // EnemyAttack — non partirebbe. Fermandosi invece poco dentro il proprio raggio il
         // contatto è garantito qualunque sia la corporatura del nemico.
-        Move(toTarget, isChasingAttractor ? ownRadius * 0.9f : stopDistance);
-        Rotate(toTarget);
+        // Lo spigolo del SoundSystem (isDetour) è una tappa da raggiungere davvero: fermandosi
+        // a stopDistance un nemico piccolo resterebbe ancora di fianco alla cassa, per sempre.
+        // Il punto di attacco di Console/SoundSystem sta già a objectiveStandoff dalla faccia
+        // (vedi GetApproachPoint), quindi va raggiunto quasi esattamente: stopDistance lo
+        // farebbe fermare troppo presto, fuori portata.
+        bool isObjectiveTarget = IsObjective(target);
+        float stopThreshold = isDetour ? 0f
+            : isObjectiveTarget ? 0.2f
+            : isChasingAttractor ? ownRadius * 0.9f
+            : stopDistance;
+        // Finché l'animazione di attacco è in corso resta fermo e girato com'è: continuando a
+        // camminare verso il proprio bersaglio si staccherebbe da quello che sta colpendo (spesso
+        // un Raver urtato lungo la strada, non il bersaglio ufficiale) e l'attacco si annullerebbe
+        // a metà, o scivolerebbe via col manganello ancora alzato.
+        if (!isMidAttack)
+        {
+            // Se un ostacolo (es. il Camper parcheggiato) sbarra la linea retta, prima si passa
+            // per gli angoli del percorso sul NavMesh: sono tappe da raggiungere davvero, come lo
+            // spigolo del SoundSystem, quindi senza soglia d'arresto.
+            Vector3 waypoint = GetNextWaypoint(approachPoint, out bool isPathCorner);
+            Vector3 toWaypoint = waypoint - rb.position;
+            toWaypoint.y = 0f;
+            Move(toWaypoint, isPathCorner ? 0f : stopThreshold);
+
+            // Fermo al punto di attacco, toTarget si riduce a pochi centimetri in una direzione
+            // qualsiasi: si guarda invece la parete dell'obiettivo che si sta colpendo.
+            Vector3 facing = toWaypoint;
+            if (isObjectiveTarget && !isDetour && !isPathCorner && targetCollider != null)
+            {
+                facing = targetCollider.ClosestPoint(rb.position) - rb.position;
+                facing.y = 0f;
+            }
+            Rotate(facing);
+        }
+
+        isAtObjective = isObjectiveTarget && !isDetour && toTarget.magnitude <= ObjectiveReachTolerance;
+    }
+
+    // Dove andare adesso per raggiungere approachPoint: se la strada è libera (percorso di due
+    // soli punti) o il NavMesh non c'è (scena senza bake, nemico ancora fuori dall'arena), è
+    // approachPoint stesso e il comportamento resta quello di sempre, linea retta. Se invece
+    // c'è un ostacolo in mezzo, è il prossimo angolo del percorso che lo aggira (isPathCorner).
+    // L'ultimo tratto, dall'ultimo angolo alla meta, va comunque dritto su approachPoint vero:
+    // il punto trovato sul NavMesh può differirne di poco (margini dell'agente).
+    private Vector3 GetNextWaypoint(Vector3 approachPoint, out bool isPathCorner)
+    {
+        isPathCorner = false;
+        if (!hasEnteredArena)
+        {
+            return approachPoint;
+        }
+
+        pathRefreshTimer += Time.fixedDeltaTime;
+        if (pathRefreshTimer >= PathRefreshInterval
+            || (approachPoint - pathGoal).sqrMagnitude > PathGoalMoveThreshold * PathGoalMoveThreshold)
+        {
+            pathRefreshTimer = 0f;
+            pathGoal = approachPoint;
+            RecalculatePath(approachPoint);
+        }
+
+        while (pathCornerIndex < pathCornerCount - 1 && HorizontalDistance(rb.position, pathCorners[pathCornerIndex]) <= PathCornerReachRadius)
+        {
+            pathCornerIndex++;
+        }
+
+        if (pathCornerIndex >= pathCornerCount - 1)
+        {
+            return approachPoint;
+        }
+
+        isPathCorner = true;
+        return pathCorners[pathCornerIndex];
+    }
+
+    private void RecalculatePath(Vector3 goal)
+    {
+        pathCornerCount = 0;
+        pathCornerIndex = 0;
+
+        if (!NavMesh.SamplePosition(rb.position, out NavMeshHit start, NavMeshSampleDistance, NavMesh.AllAreas)
+            || !NavMesh.SamplePosition(goal, out NavMeshHit end, NavMeshSampleDistance, NavMesh.AllAreas))
+        {
+            return;
+        }
+
+        // Anche un percorso parziale (meta irraggiungibile) va bene: porta il più vicino possibile.
+        if (!NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, navPath)
+            || navPath.status == NavMeshPathStatus.PathInvalid)
+        {
+            return;
+        }
+
+        pathCornerCount = navPath.GetCornersNonAlloc(pathCorners);
+        pathCornerIndex = 1; // l'angolo 0 è la partenza
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
     }
 
     // Debug visivo del targeting: un pallino colorato sempre visibile sopra ogni nemico (che
@@ -369,22 +511,31 @@ public class EnemyChase : MonoBehaviour
 
         if (objective != null)
         {
-            // Probabilità 1/N (N = guardie vive rimaste) di puntare dritto all'obiettivo
-            // invece che alla propria corsia di guardia: si ritira ad ogni cambio del numero
-            // di guardie vive, ma SOLO finché non è stata vinta (vedi il !attacksObjectiveDirectly
-            // qui sotto). Il blocco è essenziale: N cambia in continuazione durante uno scontro
-            // (ogni Raver che cade lo abbassa, ogni rianimazione lo rialza), quindi senza di
-            // esso un nemico che ha già deciso di puntare all'obiettivo ritirerebbe pochi
-            // decimi di secondo dopo e con 3 guardie vive avrebbe solo 1/3 di probabilità di
-            // volerlo ancora: non completerebbe mai il tragitto, mollando a metà strada per
-            // dirottarsi su una guardia. L'obiettivo finirebbe per essere attaccato solo con
-            // una guardia rimasta (dove 1/1 = certezza ad ogni tiro).
-            int aliveGuards = CountAliveGuards(objective);
-            if (!attacksObjectiveDirectly && (objective != lastRollObjective || aliveGuards != lastRollGuardCount))
+            // Probabilità (guardie a terra / guardie totali) di puntare dritto all'obiettivo
+            // invece che alla propria corsia di guardia: con la barriera intatta nessuno sfonda,
+            // con metà guardie a terra lo fa un nemico su due, senza guardie tutti. Si ritira ad
+            // ogni cambio del numero di guardie a terra, ma SOLO finché non è stata vinta (vedi il
+            // !attacksObjectiveDirectly qui sotto). Il blocco è essenziale: il numero cambia in
+            // continuazione durante uno scontro (ogni Raver che cade lo alza, ogni rianimazione lo
+            // abbassa), quindi senza di esso un nemico che ha già deciso di puntare all'obiettivo
+            // ritirerebbe pochi decimi di secondo dopo e potrebbe mollare a metà strada per
+            // dirottarsi su una guardia.
+            List<RaverHealth> guards = GetGuardsFor(objective);
+            int downGuards = 0;
+            foreach (RaverHealth guard in guards)
+            {
+                if (guard.IsDown)
+                {
+                    downGuards++;
+                }
+            }
+
+            if (!attacksObjectiveDirectly && (objective != lastRollObjective || downGuards != lastRollDownCount))
             {
                 lastRollObjective = objective;
-                lastRollGuardCount = aliveGuards;
-                attacksObjectiveDirectly = Random.value < 1f / Mathf.Max(1, aliveGuards);
+                lastRollDownCount = downGuards;
+                float chance = guards.Count > 0 ? (float)downGuards / guards.Count : 1f;
+                attacksObjectiveDirectly = Random.value < chance;
             }
 
             // Chi punta all'obiettivo ci va dritto: non cerca né aggira i Raver vivi, li
@@ -424,15 +575,15 @@ public class EnemyChase : MonoBehaviour
         return assignedConsole ? soundSystem?.transform : console?.transform;
     }
 
-    // Tra i Raver vivi che presidiano lo stesso objective (nearest objective calcolato dalla
-    // loro stessa posizione, stesso criterio usato per il nemico), sceglie quello alla
-    // posizione lateralPreference (0..1) una volta ordinati lungo X: i due obiettivi sono a
+    // Tra i Raver vivi che presidiano lo stesso objective (vedi GetGuardsFor), sceglie quello
+    // alla posizione lateralPreference (0..1) una volta ordinati lungo X: i due obiettivi sono a
     // metà dei lati superiore/inferiore dell'arena, con le guardie spalmate in orizzontale,
     // quindi X è l'asse lungo cui ha senso distribuire i nemici. Ritorna null se nessuna
     // guardia viva presidia quell'obiettivo (barriera sfondata o Raver tutti a terra).
     private Transform FindLaneRaver(Transform objective)
     {
-        List<RaverHealth> guards = GetAliveGuardsFor(objective);
+        List<RaverHealth> guards = GetGuardsFor(objective);
+        guards.RemoveAll(guard => guard.IsDown);
         if (guards.Count == 0)
         {
             return null;
@@ -443,18 +594,12 @@ public class EnemyChase : MonoBehaviour
         return guards[index].transform;
     }
 
-    // Quanti Raver vivi presidiano ancora l'objective indicato (stesso criterio di
-    // raggruppamento di FindLaneRaver): usato per la probabilità 1/N di puntare dritto
-    // all'obiettivo invece che alla corsia (vedi AcquireNearestTarget). Ritorna 0 se objective
-    // è null o se non resta nessuna guardia viva (barriera già sfondata del tutto).
-    private static int CountAliveGuards(Transform objective)
-    {
-        return GetAliveGuardsFor(objective).Count;
-    }
-
-    // Raver vivi che presidiano l'objective indicato (stesso criterio di FindNearestObjective):
-    // base condivisa da FindLaneRaver e CountAliveGuards.
-    private static List<RaverHealth> GetAliveGuardsFor(Transform objective)
+    // Tutti i Raver (vivi e a terra) che presidiano l'objective indicato: base condivisa da
+    // FindLaneRaver e dal tiro a sorte in AcquireNearestTarget. Il raggruppamento usa il punto
+    // di guardia (RaverChase.GuardPosition), non la posizione attuale: un Raver a terra
+    // cammina verso la ChilloutZone e, misurato da dove si trova, finirebbe contato
+    // sull'obiettivo sbagliato, falsando il rapporto a terra/totali.
+    private static List<RaverHealth> GetGuardsFor(Transform objective)
     {
         List<RaverHealth> guards = new List<RaverHealth>();
         if (objective == null)
@@ -464,12 +609,11 @@ public class EnemyChase : MonoBehaviour
 
         foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
         {
-            if (raver.IsDown)
-            {
-                continue;
-            }
+            Vector3 guardPosition = raver.TryGetComponent(out RaverChase raverChase)
+                ? raverChase.GuardPosition
+                : raver.transform.position;
 
-            if (FindNearestObjective(raver.transform.position) != objective)
+            if (FindNearestObjective(guardPosition) != objective)
             {
                 continue;
             }
@@ -510,6 +654,52 @@ public class EnemyChase : MonoBehaviour
 
         target = newTarget;
         targetCollider = newTarget != null ? FindNearestCollider(newTarget, GetApproachReference(newTarget)) : null;
+    }
+
+    // Il SoundSystem si attacca solo da davanti (vedi SoundSystem.GetFrontPoint): il punto
+    // mirato sta sempre sulla faccia frontale della cassa scelta, e chi si trova di fianco o
+    // dietro passa prima dallo spigolo anteriore, così aggira la cassa invece di infilarsi
+    // tra una cassa e l'altra o restare incastrato contro il retro. Gli altri bersagli usano
+    // il semplice punto più vicino sul collider.
+    private Vector3 GetApproachPoint(Vector3 approachReference, out bool isDetour)
+    {
+        isDetour = false;
+        if (targetCollider == null)
+        {
+            return target.position;
+        }
+
+        // Distanza dal centro del nemico alla faccia dell'obiettivo quando è in posizione di
+        // attacco: il suo raggio più il distacco voluto, così il bordo resta a objectiveStandoff.
+        float objectiveClearance = ownRadius + objectiveStandoff;
+
+        if (target.TryGetComponent(out SoundSystem soundSystem))
+        {
+            if (soundSystem.IsInFront(targetCollider, rb.position))
+            {
+                return soundSystem.GetFrontPoint(targetCollider, approachReference, objectiveClearance);
+            }
+
+            isDetour = true;
+            return soundSystem.GetFrontCornerPoint(targetCollider, rb.position, objectiveClearance);
+        }
+
+        Vector3 closestPoint = targetCollider.ClosestPoint(approachReference);
+        if (!IsObjective(target))
+        {
+            return closestPoint;
+        }
+
+        // Console: stesso distacco, allontanandosi dalla superficie verso il riferimento
+        // d'avvicinamento (o, se questo cade dentro il collider, verso il nemico).
+        Vector3 outward = approachReference - closestPoint;
+        outward.y = 0f;
+        if (outward.sqrMagnitude < 0.0001f)
+        {
+            outward = rb.position - targetCollider.bounds.center;
+            outward.y = 0f;
+        }
+        return closestPoint + outward.normalized * objectiveClearance;
     }
 
     // Console/SoundSystem sono gli unici bersagli a cui si applica lo scarto laterale
@@ -567,11 +757,11 @@ public class EnemyChase : MonoBehaviour
     // SoundSystem, la cui radice sta a un estremo dell'installazione (muro4), la distanza dal
     // Transform sarebbe gonfiata di parecchio per chi è vicino a muro1.
     //
-    // Usato da FindLaneRaver/CountAliveGuards per capire quale obiettivo presidia ciascun
-    // Raver dalla SUA posizione (un fatto geometrico), non da GetAssignedObjective,
-    // che invece decide dove VA il nemico che sta chiamando: i due possono differere (un nemico
-    // assegnato alla Console può comunque dover contare le guardie della Console dalla loro
-    // posizione reale, non dalla propria).
+    // Usato da GetGuardsFor per capire quale obiettivo presidia ciascun Raver dal SUO punto
+    // di guardia (un fatto geometrico), non da GetAssignedObjective, che invece decide dove VA
+    // il nemico che sta chiamando: i due possono differire (un nemico assegnato alla Console
+    // deve comunque contare le guardie della Console dal loro punto di guardia, non dalla
+    // propria posizione).
     private static Transform FindNearestObjective(Vector3 fromPosition)
     {
         Transform nearest = null;

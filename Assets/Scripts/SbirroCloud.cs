@@ -4,8 +4,9 @@ using UnityEngine;
 // Da mettere su un GameObject vuoto usato come prefab (vedi ParabolicProjectile.cloudPrefab).
 // È la nuvoletta che la sfera dello Sbirro lascia a terra quando finisce la sua corsa
 // (colpo diretto o atterraggio a vuoto): resta ferma per lifespan secondi, sfumando via
-// via, e infligge un colpo (come un attacco corpo a corpo di Sbirro, vedi IEnemyAttackTarget)
-// a chi la tocca — una sola volta per bersaglio, anche se ci resta dentro più a lungo.
+// via, e fa effetto su chi la tocca — una sola volta per bersaglio, anche se ci resta dentro
+// più a lungo: a Player e Raver infligge un colpo, come un attacco corpo a corpo di Sbirro
+// (vedi IEnemyAttackTarget).
 // Console/DJ e SoundSystem sono ignorati anche se la toccano: il fumogeno non deve mai
 // far danno a loro (vedi ParabolicProjectile/EnemyRangedAttack).
 [RequireComponent(typeof(SphereCollider))]
@@ -29,7 +30,8 @@ public class SbirroCloud : MonoBehaviour
     private const float MaxParticleSizeMultiplier = 1.8f;
     private float DamageRadius => radius * (ShapeSpreadMultiplier + MaxParticleSizeMultiplier * 0.5f);
 
-    private readonly HashSet<Collider> alreadyHit = new HashSet<Collider>();
+    // Per bersaglio e non per collider: chi ne ha più d'uno non deve prendere due colpi.
+    private readonly HashSet<IEnemyAttackTarget> alreadyHit = new HashSet<IEnemyAttackTarget>();
     private float elapsed;
 
     void Awake()
@@ -66,23 +68,21 @@ public class SbirroCloud : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (alreadyHit.Contains(other))
-        {
-            return;
-        }
-
         if (other.GetComponentInParent<DJConsoleHealth>() != null || other.GetComponentInParent<SoundSystem>() != null)
         {
             return;
         }
 
+        // CanBeAttacked: i Raver sconfitti non vengono toccati nemmeno dal fumo, né mentre
+        // vanno in chillout né una volta fermi lì (vedi IEnemyAttackTarget). Usciamo prima di
+        // alreadyHit, che resta l'elenco di chi il colpo l'ha davvero preso.
         IEnemyAttackTarget target = other.GetComponentInParent<IEnemyAttackTarget>();
-        if (target == null)
+        if (target == null || !target.CanBeAttacked || alreadyHit.Contains(target))
         {
             return;
         }
 
-        alreadyHit.Add(other);
+        alreadyHit.Add(target);
         target.TakeHit();
     }
 

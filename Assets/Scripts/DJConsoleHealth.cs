@@ -40,6 +40,12 @@ public class DJConsoleHealth : MonoBehaviour, IEnemyAttackTarget
         }
     }
 
+    // IEnemyAttackTarget: una Console già distrutta non va più toccata. Nella pratica a quel
+    // punto la partita è finita (Die chiama GameOverState.Trigger e distrugge il GameObject),
+    // ma vale la stessa regola degli altri bersagli: chi attacca non spreca una carica su
+    // qualcosa che non può più subire danno.
+    public bool CanBeAttacked => !isDestroyed;
+
     public void TakeHit()
     {
         if (isDestroyed)

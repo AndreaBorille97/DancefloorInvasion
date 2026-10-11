@@ -1,8 +1,8 @@
 using UnityEngine;
 
 // Da mettere sul prefab SpeedUpPowerUpAmmo (Assets/Prefabs/SpeedUpPowerUpAmmo.prefab), con
-// un Collider impostato come Trigger (Is Trigger = true). Quando il Player lo tocca, gli dà
-// una munizione Speed (vedi PlayerSpeedAmmo) e si distrugge. Se invece non viene raccolto
+// un Collider impostato come Trigger (Is Trigger = true). Quando il Player lo tocca, gli ricarica
+// un po' di stamina (vedi PlayerStamina) e si distrugge. Se invece non viene raccolto
 // entro lifespan secondi, scompare comunque da solo (stesso comportamento di CamperPickup).
 //
 // Il fare bella figura (sollevata da terra, che gira e ondeggia, con le scintille intorno e lo
@@ -11,6 +11,8 @@ using UnityEngine;
 public class SpeedUpPowerUpAmmoPickup : MonoBehaviour
 {
     [SerializeField] private float lifespan = 10f; // N: secondi dopo cui il powerup scompare se non raccolto
+    [Tooltip("Quanta stamina ricarica (la barra piena vale PlayerStamina.maxStamina, di default 100). È l'unico modo di ricaricarla: la stamina non torna da sola.")]
+    [SerializeField] private float staminaAmount = 30f;
 
     void Start()
     {
@@ -19,13 +21,13 @@ public class SpeedUpPowerUpAmmoPickup : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        PlayerSpeedAmmo ammo = other.GetComponent<PlayerSpeedAmmo>();
-        if (ammo == null)
+        PlayerStamina stamina = other.GetComponent<PlayerStamina>();
+        if (stamina == null)
         {
             return;
         }
 
-        ammo.AddAmmo(1);
+        stamina.AddStamina(staminaAmount);
         Destroy(gameObject);
     }
 }

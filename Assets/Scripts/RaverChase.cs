@@ -38,6 +38,12 @@ public class RaverChase : MonoBehaviour
     [Tooltip("Se il Raver è più lontano di così dal punto di guardia (es. appena sceso dal Camper dopo un giro), cammina dritto lì a passo normale invece di vagare lentamente in pattuglia: prima torna in posizione, poi riprende a pattugliare.")]
     [SerializeField] private float returningThreshold = 3f;
 
+    [Header("Obiettivo da difendere")]
+    [Tooltip("Il SoundSystem o la Console che questo Raver difende. Se vuoto prende il più vicino al punto di guardia. Di guardia il Raver gli sta sempre girato verso, e quando scatta su uno Sbirro non gli dà mai le spalle (vedi maxAngleFromObjective).")]
+    [SerializeField] private Transform defendedObjective;
+    [Tooltip("Di quanti gradi al massimo il Raver può girarsi rispetto alla direzione dell'obiettivo mentre combatte o rientra: 90 = al massimo di fianco, mai di spalle.")]
+    [SerializeField] private float maxAngleFromObjective = 90f;
+
     [Header("Modalità veicolo (Camper)")]
     [Tooltip("Comportamento della v1: mentre pilota il Camper insegue sempre lo Sbirro più vicino, senza limiti di raggio, ma se si allontana oltre questa distanza dal Player smette e punta dritto verso di lui finché non rientra nel raggio.")]
     [SerializeField] private float maxDistanceFromPlayer = 10f;
@@ -64,6 +70,15 @@ public class RaverChase : MonoBehaviour
     private float vehicleSpeed; // velocità corrente alla guida del Camper: sale e scende per gradi, vedi DriveVehicle
     private float steerInput;   // posizione del volante, -1 tutto a sinistra, +1 tutto a destra: si muove per gradi, non a scatti
 
+    // Scostato dal Camper in corsa (vedi PushAside): finché è true il Raver torna al punto di
+    // guardia dritto e a passo normale, invece di rientrare pian piano con la pattuglia.
+    private bool pushedAside;
+
+    // Letto da RaverAnimation: true nei passi in cui il Raver si sposta davvero per andare da
+    // qualche parte (al Camper, alla chillout, di ritorno al punto di guardia, addosso a uno
+    // Sbirro). La pattuglia lenta attorno al punto di guardia non conta: lì il Raver balla.
+    public bool IsWalking { get; private set; }
+
     // Usato da RaverDrugBuff per raddoppiare/ripristinare la velocità di movimento.
     public void MultiplyMoveSpeed(float factor)
     {
@@ -73,12 +88,6 @@ public class RaverChase : MonoBehaviour
     // Usato da RaverHealth quando il Raver va a terra, per allontanarsi un po' dal punto
     // che stava difendendo invece di restare fermo esattamente lì (vedi GoDown).
     public Vector3 GuardPosition => guardPosition;
-
-    // Usato da PlayerJugglerSummon per non scegliere come giocoliere un Raver già dirottato
-    // altrove (es. in cammino verso il Camper, vedi CamperVehicle.TrySendNearestRaver):
-    // altrimenti BeginJuggling chiamerebbe SetForcedPosition sopra un forcedTarget già
-    // impostato da qualcun altro, cancellandolo senza che nessuno se ne accorga.
-    public bool IsForced => forcedTarget != null || forcedPosition.HasValue;
 
     // Usato da CamperVehicle per mandare questo Raver dritto al Camper, ignorando qualunque
     // Sbirro ingaggiato finché non arriva (vedi GetMoveDestination). Riusa Move()/Rotate()
@@ -129,6 +138,26 @@ public class RaverChase : MonoBehaviour
         vehicle = value;
     }
 
+    // Chiamato dal Camper mentre è guidato, su ogni Raver a piedi che si è trovato sotto la
+    // carrozzeria (vedi CamperVehicle.PushRaversOutOfBody): il camion non lo attraversa, lo
+    // scosta. Lo spostamento arriva già calcolato dal mezzo, che è l'unico a conoscere la
+    // propria sagoma, ed è sempre orizzontale.
+    //
+    // Si applica con MovePosition, cioè nello stesso modo in cui il Raver si muove di suo: una
+    // forza o una velocità non servirebbero a niente, perché FixedUpdate azzera la velocità
+    // all'inizio di ogni passo.
+    public void PushAside(Vector3 worldDelta)
+    {
+        worldDelta.y = 0f;
+        if (rb == null || worldDelta.sqrMagnitude <= 0f)
+        {
+            return;
+        }
+
+        rb.MovePosition(rb.position + worldDelta);
+        pushedAside = true; // e da qui torna al punto di guardia, vedi FixedUpdate
+    }
+
     public void SetVehicleMode(bool enabled)
     {
         vehicleMode = enabled;
@@ -152,6 +181,15 @@ public class RaverChase : MonoBehaviour
         AcquireNearestEnemy();
     }
 
+    void Start()
+    {
+        // In Start e non in Awake: SoundSystem e Console devono essere già pronti.
+        if (defendedObjective == null)
+        {
+            defendedObjective = FindNearestObjective(guardPosition);
+        }
+    }
+
     void FixedUpdate()
     {
         rb.linearVelocity = Vector3.zero;
@@ -173,6 +211,17 @@ public class RaverChase : MonoBehaviour
             target = null;
         }
 
+        // Rientrato dopo una spinta del Camper: da qui riprende la pattuglia normale. La soglia
+        // è la stessa distanza a cui Move si ferma quando rientra (minApproachDistance): con una
+        // soglia più stretta il Raver si fermerebbe a un passo da casa senza che la spinta venga
+        // mai considerata smaltita, e non pattuglierebbe mai più. Vuol dire anche che una spinta
+        // più corta di così si smaltisce da sé, senza nessun viaggio di ritorno: il Raver è
+        // ancora praticamente al suo posto.
+        if (pushedAside && (rb.position - guardPosition).sqrMagnitude <= minApproachDistance * minApproachDistance)
+        {
+            pushedAside = false;
+        }
+
         // A riposo (nessuna minaccia da ingaggiare, nessuna destinazione forzata dal Camper,
         // e non in modalità veicolo): normalmente pattuglia in continuazione tra punti vicini
         // invece di restare fermo come un blocco statico, al passo lento patrolMoveSpeed invece
@@ -181,8 +230,15 @@ public class RaverChase : MonoBehaviour
         // a passo normale: niente pattuglia lenta finché non è di nuovo a casa. In modalità
         // veicolo non pattuglia mai: se non ha nessuno da inseguire resta semplicemente fermo
         // (vedi GetMoveDestination).
+        //
+        // Lo stesso rientro dritto e a passo normale vale, a qualunque distanza, per un Raver
+        // appena scostato dal Camper che gli è passato addosso (pushedAside): la sua posizione è
+        // il punto di guardia, e deve tornarci subito invece di restare dove il mezzo l'ha
+        // lasciato o di riavvicinarsi al rallentatore col giro di pattuglia.
         bool isIdle = !vehicleMode && forcedTarget == null && !forcedPosition.HasValue && target == null;
-        bool isReturning = isIdle && (rb.position - guardPosition).sqrMagnitude > returningThreshold * returningThreshold;
+        bool isReturning = isIdle
+            && (pushedAside
+                || (rb.position - guardPosition).sqrMagnitude > returningThreshold * returningThreshold);
         if (isIdle && !isReturning)
         {
             UpdatePatrol();
@@ -196,13 +252,84 @@ public class RaverChase : MonoBehaviour
         // Raver continua invece a puntare e camminare come ha sempre fatto.
         if (vehicleMode)
         {
+            IsWalking = false;
             DriveVehicle(toTarget);
             return;
         }
 
         bool slowIdle = isIdle && !isReturning;
-        Move(toTarget, slowIdle ? patrolMoveSpeed : moveSpeed, slowIdle ? patrolArrivalDistance : minApproachDistance);
-        Rotate(toTarget);
+        bool moved = Move(toTarget, slowIdle ? patrolMoveSpeed : moveSpeed, slowIdle ? patrolArrivalDistance : minApproachDistance);
+        IsWalking = moved && !slowIdle;
+
+        // Diretto al Camper o alla chillout il Raver lascia il suo posto e guarda dove va. Al
+        // posto invece non dà mai le spalle a quello che difende: di guardia (ballo) lo guarda
+        // dritto, in combattimento o rientrando al massimo gli sta di fianco.
+        bool leavingPost = forcedTarget != null || forcedPosition.HasValue;
+        if (leavingPost || defendedObjective == null)
+        {
+            Rotate(toTarget);
+        }
+        else
+        {
+            Rotate(FacingTowardObjective(slowIdle ? Vector3.zero : toTarget));
+        }
+    }
+
+    // La direzione voluta, girata quanto basta perché l'obiettivo resti entro
+    // maxAngleFromObjective gradi dal davanti. Direzione nulla = guarda dritto l'obiettivo.
+    private Vector3 FacingTowardObjective(Vector3 wanted)
+    {
+        Vector3 toObjective = ObjectiveCenter() - rb.position;
+        toObjective.y = 0f;
+        if (toObjective.sqrMagnitude < 0.0001f)
+        {
+            return wanted;
+        }
+
+        if (wanted.sqrMagnitude < 0.0001f)
+        {
+            return toObjective;
+        }
+
+        float angle = Vector3.SignedAngle(toObjective, wanted, Vector3.up);
+        angle = Mathf.Clamp(angle, -maxAngleFromObjective, maxAngleFromObjective);
+        return Quaternion.AngleAxis(angle, Vector3.up) * toObjective;
+    }
+
+    // Il centro della sagoma e non il pivot: quello di un modello importato può stare di lato.
+    private Vector3 ObjectiveCenter()
+    {
+        Collider objectiveCollider = defendedObjective.GetComponentInChildren<Collider>();
+        return objectiveCollider != null ? objectiveCollider.bounds.center : defendedObjective.position;
+    }
+
+    private static Transform FindNearestObjective(Vector3 referencePoint)
+    {
+        Transform nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+
+        foreach (MonoBehaviour objective in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+        {
+            if (!(objective is SoundSystem) && !(objective is DJConsoleHealth))
+            {
+                continue;
+            }
+
+            float sqrDistance = (objective.transform.position - referencePoint).sqrMagnitude;
+            if (sqrDistance < nearestSqrDistance)
+            {
+                nearest = objective.transform;
+                nearestSqrDistance = sqrDistance;
+            }
+        }
+
+        return nearest;
+    }
+
+    // Disabilitato (a terra alla chillout, vedi RaverHealth.Settle) non si muove più.
+    void OnDisable()
+    {
+        IsWalking = false;
     }
 
     // In ordine di priorità: destinazione forzata verso un Transform (il Camper da
@@ -382,17 +509,19 @@ public class RaverChase : MonoBehaviour
         rb.MoveRotation(nextRotation);
     }
 
-    private void Move(Vector3 toTarget, float speed, float stopDistance)
+    // Restituisce true se in questo passo si è spostato.
+    private bool Move(Vector3 toTarget, float speed, float stopDistance)
     {
         if (toTarget.magnitude <= stopDistance)
         {
             // Già abbastanza vicino (a contatto in combattimento, o al punto di pattuglia
             // corrente): non avanzare oltre, altrimenti a velocità elevata il Raver sfonda e
             // compenetra il bersaglio.
-            return;
+            return false;
         }
 
         rb.MovePosition(rb.position + toTarget.normalized * speed * Time.fixedDeltaTime);
+        return true;
     }
 
     private void Rotate(Vector3 toTarget)

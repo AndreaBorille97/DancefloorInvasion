@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 // Da mettere sul prefab dello Sbirro a distanza (es. Sbirro3), al posto della coppia
@@ -59,6 +60,9 @@ public class EnemyRangedAttack : MonoBehaviour
     [Tooltip("Colpi al secondo mentre è fermo ad attaccare.")]
     [SerializeField] private float fireRate = 0.7f;
     [SerializeField] private Transform firePoint; // punto di spawn del proiettile; se vuoto usa la posizione del nemico
+    [Tooltip("In che punto dell'animazione di sparo (0 = inizio, 1 = fine) parte davvero il fumogeno: va fatto coincidere col colpo che si vede nella clip. È una frazione della clip e non un tempo, così resta a segno anche cambiando la velocità dell'Animator. Vale solo per chi ha l'animazione di sparo (trigger \"Attack\", es. Sbirro3): gli altri lanciano subito.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float fireAnimationMoment = 0.35f;
 
     [Header("Fuga (boss morto)")]
     [Tooltip("Ogni quanti secondi cambia la direzione di fuga casuale mentre RoutState è attivo: valori bassi la fanno sembrare più erratica.")]
@@ -66,6 +70,16 @@ public class EnemyRangedAttack : MonoBehaviour
 
     private Rigidbody rb;
     private Animator animator;
+    private bool hasAttackTrigger;
+    private const string AttackTrigger = "Attack";
+    // Bool dell'Animator acceso solo quando il nemico si è mosso in questo FixedUpdate (vedi
+    // Move): da fermo a sparare il controller passa alla posa ferma invece di camminare sul
+    // posto. Come per il trigger, solo se il controller ce l'ha (Sbirro3New_Controller).
+    private bool hasMovingParameter;
+    private const string MovingParameter = "Moving";
+    private bool movedThisStep;
+    // Colpo in attesa del punto giusto dell'animazione di sparo (vedi ShotRoutine).
+    private Coroutine pendingShot;
     private Transform target;
     private State state = State.Chasing;
     private float retargetTimer;
@@ -91,6 +105,22 @@ public class EnemyRangedAttack : MonoBehaviour
         if (animator != null)
         {
             animator.speed = animationSpeedMultiplier;
+
+            // Il trigger "Attack" (animazione di sparo, vedi Fire) c'è solo nei controller che
+            // ce l'hanno, es. Sbirro3New_Controller: il Robosbirro usa questo stesso script con un
+            // controller diverso, e un SetTrigger su un parametro inesistente riempirebbe la
+            // Console di avvisi a ogni colpo.
+            foreach (AnimatorControllerParameter parameter in animator.parameters)
+            {
+                if (parameter.name == AttackTrigger && parameter.type == AnimatorControllerParameterType.Trigger)
+                {
+                    hasAttackTrigger = true;
+                }
+                if (parameter.name == MovingParameter && parameter.type == AnimatorControllerParameterType.Bool)
+                {
+                    hasMovingParameter = true;
+                }
+            }
         }
 
         AcquireNearestTarget();
@@ -107,6 +137,17 @@ public class EnemyRangedAttack : MonoBehaviour
     }
 
     void FixedUpdate()
+    {
+        movedThisStep = false;
+        Tick();
+
+        if (hasMovingParameter)
+        {
+            animator.SetBool(MovingParameter, movedThisStep);
+        }
+    }
+
+    private void Tick()
     {
         // Stesso motivo di EnemyChase: il movimento è interamente guidato da MovePosition/MoveRotation,
         // una velocità fisica residua dopo un urto resterebbe "appiccicata" al Rigidbody.
@@ -217,7 +258,7 @@ public class EnemyRangedAttack : MonoBehaviour
         if (fireTimer >= fireInterval)
         {
             fireTimer = 0f;
-            Fire();
+            StartShot();
         }
     }
 
@@ -236,7 +277,10 @@ public class EnemyRangedAttack : MonoBehaviour
     private void EnterAttacking()
     {
         state = State.Attacking;
-        fireTimer = 0f; // il primo colpo parte dopo un intervallo pieno, non appena si ferma
+        // Il primo colpo parte appena si ferma, non dopo un intervallo pieno: con l'attesa
+        // dell'animazione di sparo in più (vedi ShotRoutine), restava lì fermo troppo a lungo.
+        // La cadenza di fireRate vale dal secondo colpo in poi.
+        fireTimer = 1f / Mathf.Max(fireRate, 0.01f);
         tooCloseTimer = 0f;
     }
 
@@ -408,6 +452,7 @@ public class EnemyRangedAttack : MonoBehaviour
 
     private void Move(Vector3 direction)
     {
+        movedThisStep = true;
         Vector3 nextPosition = rb.position + direction.normalized * moveSpeed * Time.fixedDeltaTime;
         rb.MovePosition(ClampToFloor(nextPosition));
     }
@@ -459,6 +504,86 @@ public class EnemyRangedAttack : MonoBehaviour
 
         Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         rb.MoveRotation(targetRotation);
+    }
+
+    // Chi ha l'animazione di sparo la fa partire e lancia il fumogeno solo quando la clip arriva
+    // a fireAnimationMoment (vedi ShotRoutine); gli altri (es. il Robosbirro) lanciano subito.
+    private void StartShot()
+    {
+        if (!hasAttackTrigger)
+        {
+            Fire();
+            return;
+        }
+
+        if (pendingShot != null)
+        {
+            return; // il colpo precedente non è ancora partito
+        }
+
+        animator.SetTrigger(AttackTrigger);
+        pendingShot = StartCoroutine(ShotRoutine());
+    }
+
+    // Due fasi: prima si aspetta che l'animazione di sparo parta da capo (il tempo della clip
+    // sotto fireAnimationMoment), poi che arrivi a fireAnimationMoment. Senza la prima, un colpo
+    // chiesto mentre la clip del colpo precedente sta ancora finendo partirebbe subito, fuori
+    // sincrono. Se l'Animator non ci arriva entro ShotTimeout (controller senza lo stato giusto,
+    // modello disattivato...) il colpo parte comunque, per non far smettere di sparare lo Sbirro.
+    // Se nel frattempo ha smesso di attaccare (fuga, boss morto) il colpo si perde.
+    private IEnumerator ShotRoutine()
+    {
+        const float ShotTimeout = 2f;
+        float waited = 0f;
+        bool started = false;
+
+        while (waited < ShotTimeout)
+        {
+            float time = GetAttackAnimationTime();
+            if (!started)
+            {
+                started = time >= 0f && time < fireAnimationMoment;
+            }
+            else if (time < 0f || time >= fireAnimationMoment)
+            {
+                break;
+            }
+
+            waited += Time.deltaTime;
+            yield return null;
+        }
+
+        pendingShot = null;
+        if (state == State.Attacking && !RoutState.IsActive)
+        {
+            Fire();
+        }
+        else
+        {
+            animator.ResetTrigger(AttackTrigger);
+        }
+    }
+
+    // Tempo normalizzato (0..1) della clip di sparo, cioè dello stato col tag "Attack" (anche
+    // mentre ci si sta entrando in transizione), o -1 se l'Animator non è lì.
+    private float GetAttackAnimationTime()
+    {
+        if (!animator.isActiveAndEnabled)
+        {
+            return -1f;
+        }
+
+        if (animator.IsInTransition(0))
+        {
+            AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(0);
+            if (next.IsTag(AttackTrigger))
+            {
+                return next.normalizedTime;
+            }
+        }
+
+        AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
+        return current.IsTag(AttackTrigger) ? current.normalizedTime : -1f;
     }
 
     private void Fire()

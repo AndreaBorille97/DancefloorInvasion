@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7f8a77e18464618bdd97d062bc8b39f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParabolicProjectile
-  speed: 14
+  speed: 8
   arcHeight: 1.5
   lifespan: 4
   cloudPrefab: {fileID: 28937338850210343, guid: 5a157fe65df151543ae55c9a719a1dc5, type: 3}

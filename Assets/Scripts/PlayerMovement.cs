@@ -25,6 +25,9 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 moveDirection; // direzione di movimento letta dallo stick sinistro (aggiornata ogni frame)
     private Vector3 aimDirection;  // direzione di mira/rotazione letta dallo stick destro (mantiene l'ultimo valore valido)
     private Vector3 pendingDash;   // offset accodato da Dash(), consumato dal prossimo Move()
+    // Rallentamento temporaneo (vedi ApplySlow): fattore sulla camminata e fino a quando dura.
+    private float slowMultiplier = 1f;
+    private float slowUntil;
     // Onda d'urto dello scatto: basta aggiungere il componente Air Shot VFX al Player (o a un
     // suo figlio) e viene agganciato da solo, niente da collegare a mano nell'Inspector.
     // Resta null finché il componente non c'è: in quel caso lo scatto funziona come prima,
@@ -98,7 +101,8 @@ public class PlayerMovement : MonoBehaviour
         // accavallino sullo stesso step fisico, dove vincerebbe solo l'ultima
         // (Rigidbody.MovePosition non è cumulativo tra chiamate diverse nello stesso step).
         bool isDashing = pendingDash.sqrMagnitude > 0.0001f;
-        Vector3 delta = moveDirection * moveSpeed * Time.fixedDeltaTime + pendingDash;
+        float speed = Time.time < slowUntil ? moveSpeed * slowMultiplier : moveSpeed;
+        Vector3 delta = moveDirection * speed * Time.fixedDeltaTime + pendingDash;
         pendingDash = Vector3.zero;
 
         if (delta.sqrMagnitude < 0.0000001f)
@@ -119,7 +123,17 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // Chiamato da PlayerSpeedAmmo quando si consuma una munizione Speed: accoda uno scatto di
+    // Rallenta la camminata (non lo scatto) a multiplier volte la velocità normale per duration
+    // secondi: usato dalla nube dello Sbirro3 (vedi SbirroCloud). Un nuovo rallentamento mentre
+    // uno è già in corso non si somma: vale il più forte, e dura fino al più lontano dei due.
+    public void ApplySlow(float multiplier, float duration)
+    {
+        bool isSlowed = Time.time < slowUntil;
+        slowMultiplier = isSlowed ? Mathf.Min(slowMultiplier, multiplier) : multiplier;
+        slowUntil = Mathf.Max(slowUntil, Time.time + duration);
+    }
+
+    // Chiamato da PlayerStamina quando si scatta (R1): accoda uno scatto di
     // "distance" unità nella direzione in cui il Player si sta muovendo (l'ultimo moveDirection
     // letto dallo stick sinistro); se il Player è fermo, usa la direzione verso cui è rivolto
     // (transform.forward) come fallback. Viene applicato dal prossimo Move(), non subito qui,
@@ -190,7 +204,12 @@ public class PlayerMovement : MonoBehaviour
                 // questo, il prossimo SweepTest dello stesso scatto lo ricolpirebbe di nuovo a
                 // distanza ~0 e resterebbe bloccato lì invece di proseguire attraverso di lui.
                 hit.collider.enabled = false;
-                enemyHealth.TakeDamage(float.MaxValue, transform.position);
+
+                // TakeDashHit e non TakeDamage: è quello che fa tornare indietro lo schizzo
+                // rosso, verso il punto da cui lo scatto è partito invece che in avanti (vedi
+                // il suo commento). Gli passiamo la direzione dello scatto perché la posizione
+                // del Player, qui, è già quella dello Sbirro appena attraversato.
+                enemyHealth.TakeDashHit(direction);
                 continue;
             }
 

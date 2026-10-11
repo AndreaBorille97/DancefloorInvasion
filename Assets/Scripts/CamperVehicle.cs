@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 
 // Da mettere sul Camper piazzato in scena (Assets/Prefabs/Camper.prefab). Il suo Collider
 // viene forzato a Trigger in Awake, come serve allo script: non c'è niente da spuntare in scena.
@@ -22,8 +23,10 @@ using UnityEngine;
 // insieme a lui. Seguirlo vuol dire tenergli il modello centrato addosso e girare la posa con
 // cui il mezzo è piazzato in scena attorno al solo asse verticale, quel tanto che porta il muso
 // nella direzione di marcia: la posa piazzata non va mai ricostruita da zero, è lei quella
-// giusta (vedi LateUpdate). Mentre è a bordo, ogni Sbirro toccato dal Camper subisce il quadruplo del
-// danno di un colpo di Raver normale (vedi EnemyHealth.TakeCamperHit), non più insta-kill,
+// giusta (vedi LateUpdate). Mentre è a bordo, ogni Sbirro toccato dal Camper muore sul colpo,
+// qualunque vita abbia (vedi EnemyHealth.TakeCamperHit, che toglie una frazione della vita
+// massima invece di un numero fisso di punti). Il Robosbirro no: lui prende un danno fisso e va
+// investito più volte, vedi RobosbirroHealth.TakeCamperHit. Intanto
 // la benzina scende di un secondo per ogni secondo di guida, e il Raver alla guida è
 // invulnerabile (vedi RaverHealth.SetInvulnerable, chiamato da Mount/Dismount): niente lo
 // tocca finché resta a bordo.
@@ -61,6 +64,12 @@ public class CamperVehicle : MonoBehaviour
     [Tooltip("Collider separato, NON Trigger, sullo stesso GameObject: senza Rigidbody è già statico e blocca Player/Sbirro come un muro. Attivo solo a mezzo parcheggiato: da guidato interferirebbe col rilevamento one-shot e spingerebbe fisicamente Raver/nemici. Se resta vuoto va bene lo stesso: in Awake ne viene creato uno a runtime copiando la forma del collider Trigger, quindi il mezzo parcheggiato è comunque solido. Va riempito a mano solo per dargli un ingombro diverso dalla sagoma del Trigger.")]
     [SerializeField] private Collider blockingCollider;
 
+    // Il buco che il mezzo parcheggiato ritaglia nel NavMesh dei nemici (vedi EnemyNavMesh ed
+    // EnemyChase.GetNextWaypoint), così gli Sbirro ci girano attorno invece di spingercisi
+    // contro. Segue blockingCollider: acceso da parcheggiato, spento da guidato (vedi
+    // SetBlockingColliderEnabled), quando il mezzo deve investirli e non essere evitato.
+    private NavMeshObstacle navObstacle;
+
     private RaverChase pilot;
     private bool isClaimed; // già assegnato a un Raver (in avvicinamento o già a bordo)
     private bool isMounted; // il Raver è salito: il collider ora fa danno one-shot, e la benzina scende
@@ -87,6 +96,12 @@ public class CamperVehicle : MonoBehaviour
     private float bodyHalfSpine;
     private float bodyRadius;
     private int bodySamples = 1; // in quanti cerchi viene spezzata la sagoma per il controllo
+
+    // Raver a piedi da scostare mentre il mezzo è guidato, ognuno col raggio del proprio
+    // ingombro visto dall'alto: vedi PushRaversOutOfBody, la lista si fa al Mount.
+    private RaverChase[] bystanders;
+    private float[] bystanderRadii;
+    private const float BystanderClearance = 0.05f; // margine oltre la carrozzeria: li scosta appena fuori, non li sbalza via
 
     // Sound system, Console e chillout: i posti sopra cui il mezzo non deve mai passare (vedi
     // CacheNoGoZones). Misurati una volta sola: sono oggetti di scena, non si muovono.
@@ -192,6 +207,8 @@ public class CamperVehicle : MonoBehaviour
             CenterColliderOnModel(blockingCollider);
         }
 
+        CreateNavObstacle();
+
         // Con che sagoma il mezzo occupa il pavimento, e quali sono i punti dove non deve
         // mai finirci sopra: vedi KeepBodyClearOfTargets.
         MeasureBodyShape(triggerCollider);
@@ -254,6 +271,11 @@ public class CamperVehicle : MonoBehaviour
             - transform.TransformVector(modelLocalCenter);
         position.y = parkedHeight;
         transform.position = position;
+
+        // Il mezzo è al suo posto: i Raver a piedi che ci si sono trovati sotto vengono scostati
+        // adesso, non alla fine del prossimo passo di fisica, così non li si vede mai dentro la
+        // carrozzeria.
+        PushRaversOutOfBody();
     }
 
     // Chiamato da CamperPickup alla raccolta dell'ammo: aggiunge solo refillFraction del
@@ -422,8 +444,133 @@ public class CamperVehicle : MonoBehaviour
         pilot.SetVehicleMode(true); // da qui guida: accelera, sterza e frena da mezzo (RaverChase.DriveVehicle),
                                     // alla velocità del mezzo e non a quella del Raver a piedi
         pilot.GetComponent<RaverHealth>()?.SetInvulnerable(true); // niente lo tocca finché resta a bordo
-        SetBlockingColliderEnabled(false); // da guidato niente ingombro fisico: non deve spingere Raver/nemici né bloccare il one-shot
+        // Da guidato niente ingombro fisico: spingerebbe Raver e nemici a caso (è un collider
+        // statico spostato a mano, la fisica non sa a che velocità va) e taglierebbe fuori il
+        // rilevamento degli Sbirro investiti. I Raver a piedi vengono scostati a mano subito
+        // dopo, vedi PushRaversOutOfBody: sono l'unica cosa che il mezzo non deve attraversare
+        // senza però esserne deviato.
+        SetBlockingColliderEnabled(false);
+        CacheBystanders(); // chi il mezzo dovrà scostare strada facendo, vedi PushRaversOutOfBody
         driveAnimation?.SetDriving(true);
+    }
+
+    // Mentre il mezzo è guidato, ogni Raver a piedi che finisce sotto la carrozzeria viene
+    // scostato di lato quel tanto che basta a restarne fuori: un camion in mezzo alla folla
+    // sposta le persone, non le attraversa. Serve perché da guidato il mezzo non ha nessun
+    // ingombro fisico — il guscio solido è spento in Mount e quello che resta è un Trigger, che
+    // non ferma nessuno — e senza questo il camion passava dritto sopra i Raver compenetrandoli.
+    //
+    // A spostarsi è il Raver e non il mezzo, al contrario di quello che succede con sound
+    // system, Console e chillout (vedi KeepBodyClearOfTargets): quelli sono gli obiettivi da
+    // difendere e il camion ci gira attorno, un compagno a piedi invece si fa da parte. Far
+    // deviare il mezzo anche per loro lo avrebbe bloccato in continuazione, dato che i Raver
+    // stanno di guardia proprio attorno alle cose che il mezzo deve raggiungere.
+    //
+    // Ed è uno spostamento momentaneo: appena il mezzo lo lascia libero, il Raver torna dritto
+    // al suo punto di guardia a passo normale (vedi RaverChase.PushAside e il rientro in
+    // RaverChase.FixedUpdate). Altrimenti ogni passaggio del camion sparpaglierebbe un po' di
+    // più la difesa dell'arena, lasciando i Raver dove li ha spinti.
+    //
+    // Non è una spinta fisica: il Raver azzera la propria velocità ad ogni FixedUpdate e si
+    // muove solo con MovePosition (vedi RaverChase), quindi una forza non lo sposterebbe di un
+    // millimetro. Gli passiamo direttamente lo spostamento, vedi RaverChase.PushAside.
+    private void PushRaversOutOfBody()
+    {
+        if (bystanders == null || bodyRadius <= 0f)
+        {
+            return;
+        }
+
+        // La sagoma è la stessa che guarda KeepBodyClearOfTargets (un segmento centrale
+        // ingrossato di bodyRadius), ma presa dalla posa in cui il mezzo è stato appena
+        // piazzato: così la spinta è quella del fotogramma che si sta per vedere, senza ritardo.
+        Vector3 center = transform.TransformPoint(modelLocalCenter);
+        Vector3 halfSpine = transform.rotation * bodyLocalAxis * bodyHalfSpine;
+        halfSpine.y = 0f;
+
+        for (int i = 0; i < bystanders.Length; i++)
+        {
+            RaverChase raver = bystanders[i];
+            if (raver == null || raver == pilot)
+            {
+                continue; // il pilota sta dentro la carrozzeria per definizione
+            }
+
+            // Un Raver a terra che si è già sistemato alla chillout ha RaverChase spento e il
+            // Rigidbody bloccato (vedi RaverHealth.Settle): deve restare esattamente dov'è, e
+            // spostandolo non tornerebbe mai indietro da solo. Non è un buco nella regola: la
+            // chillout è fra i posti dove il mezzo non entra comunque (vedi CacheNoGoZones),
+            // quindi non gli passa sopra.
+            if (!raver.enabled)
+            {
+                continue;
+            }
+
+            // La quota non conta: il pavimento dell'arena è piano, e il pivot del mezzo può
+            // stare più in alto di quello del Raver.
+            Vector3 raverPosition = raver.transform.position;
+            raverPosition.y = center.y;
+
+            Vector3 away = raverPosition - ClosestPointOnSpine(center, halfSpine, raverPosition);
+            away.y = 0f;
+
+            float needed = bodyRadius + bystanderRadii[i] + BystanderClearance;
+            float distance = away.magnitude;
+            if (distance >= needed)
+            {
+                continue;
+            }
+
+            // Se è finito esattamente sull'asse del mezzo non c'è un "via da qui" da seguire:
+            // esce di fianco, sempre dalla stessa parte. È un lato scelto e basta, non una
+            // direzione da tarare a occhio.
+            Vector3 direction = distance > 0.0001f
+                ? away / distance
+                : SideOfBody(halfSpine);
+
+            raver.PushAside(direction * (needed - distance));
+        }
+    }
+
+    // Da che parte scostare un Raver che si trova esattamente sull'asse del mezzo: di fianco,
+    // perpendicolarmente alla carrozzeria.
+    private Vector3 SideOfBody(Vector3 halfSpine)
+    {
+        Vector3 side = Vector3.Cross(Vector3.up, halfSpine);
+        return side.sqrMagnitude > 0.0001f ? side.normalized : transform.right;
+    }
+
+    // Punto della spina dorsale del mezzo più vicino a point: la spina va da center-halfSpine
+    // a center+halfSpine.
+    private static Vector3 ClosestPointOnSpine(Vector3 center, Vector3 halfSpine, Vector3 point)
+    {
+        float sqrLength = halfSpine.sqrMagnitude;
+        if (sqrLength <= 0.000001f)
+        {
+            return center; // sagoma tonda: la spina è il solo centro
+        }
+
+        float t = Mathf.Clamp(Vector3.Dot(point - center, halfSpine) / sqrLength, -1f, 1f);
+        return center + halfSpine * t;
+    }
+
+    // Chi può essere scostato dal mezzo in corsa, col raggio del suo ingombro visto dall'alto
+    // (letto dal collider, così non c'è una taglia scritta a mano da tenere aggiornata): la
+    // lista si fa una volta al Mount e non ad ogni fotogramma. I Raver in scena non vengono mai
+    // distrutti — a vita zero vanno a terra e restano lì, vedi RaverHealth — quindi resta buona
+    // per tutto il giro. Un Raver a terra viene scostato come gli altri: il camion non deve
+    // passargli sopra solo perché è steso.
+    private void CacheBystanders()
+    {
+        bystanders = FindObjectsByType<RaverChase>(FindObjectsSortMode.None);
+        bystanderRadii = new float[bystanders.Length];
+        for (int i = 0; i < bystanders.Length; i++)
+        {
+            Collider shape = bystanders[i].GetComponent<Collider>();
+            bystanderRadii[i] = shape != null
+                ? Mathf.Max(shape.bounds.extents.x, shape.bounds.extents.z)
+                : 0f;
+        }
     }
 
     // Chiamato da RaverChase.DriveVehicle ad ogni passo di guida, con la posizione in cui il
@@ -861,6 +1008,42 @@ public class CamperVehicle : MonoBehaviour
         {
             blockingCollider.enabled = value;
         }
+
+        if (navObstacle != null)
+        {
+            navObstacle.enabled = value;
+        }
+    }
+
+    // Stessa sagoma di blockingCollider: esatta se è un BoxCollider (il caso normale, copiato dal
+    // Trigger), altrimenti il suo ingombro riportato nello spazio locale del mezzo.
+    // carveOnlyStationary: il buco si ritaglia solo a mezzo fermo, niente ricalcoli mentre si muove.
+    private void CreateNavObstacle()
+    {
+        if (blockingCollider == null)
+        {
+            return;
+        }
+
+        navObstacle = gameObject.AddComponent<NavMeshObstacle>();
+        navObstacle.shape = NavMeshObstacleShape.Box;
+        navObstacle.carving = true;
+        navObstacle.carveOnlyStationary = true;
+
+        if (blockingCollider is BoxCollider box && box.transform == transform)
+        {
+            navObstacle.center = box.center;
+            navObstacle.size = box.size;
+        }
+        else
+        {
+            Bounds bounds = blockingCollider.bounds;
+            Vector3 scale = transform.lossyScale;
+            navObstacle.center = transform.InverseTransformPoint(bounds.center);
+            navObstacle.size = new Vector3(bounds.size.x / scale.x, bounds.size.y / scale.y, bounds.size.z / scale.z);
+        }
+
+        navObstacle.enabled = blockingCollider.enabled;
     }
 
     private RaverChase FindNearestRaver()

@@ -145,6 +145,73 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
         }
     }
 
+    // Il SoundSystem si attacca SOLO da davanti, cioè dal lato verso cui spara ogni cassa
+    // (transform.forward, vedi Fire): i fianchi, il retro e i varchi tra una cassa e l'altra
+    // non contano. Senza questo vincolo i nemici puntavano il punto più vicino di una cassa
+    // qualsiasi, spesso un fianco, e finivano infilati tra le casse o dietro l'installazione.
+    //
+    // Punto davanti alla faccia frontale della cassa di part (uno dei collider "muro1..muro4"),
+    // all'altezza di from e a clearance di distanza dalla faccia: è lì che si ferma un nemico
+    // che attacca questa cassa (vedi EnemyChase), senza toccarla.
+    public Vector3 GetFrontPoint(Collider part, Vector3 from, float clearance)
+    {
+        Vector3 forward = GetCrateForward(part);
+        Vector3 point = part.ClosestPoint(from);
+        float depth = GetFrontDepth(part, forward);
+        return point + forward * (depth + clearance - Vector3.Dot(point - part.bounds.center, forward));
+    }
+
+    // true se position sta davanti alla faccia frontale della cassa di part: usato da
+    // EnemyChase per capire se prima di attaccare deve girare attorno alla cassa.
+    public bool IsInFront(Collider part, Vector3 position)
+    {
+        Vector3 forward = GetCrateForward(part);
+        return Vector3.Dot(position - part.bounds.center, forward) >= GetFrontDepth(part, forward);
+    }
+
+    // Punto appena fuori dallo spigolo anteriore della cassa di part, dal lato in cui si
+    // trova position, a clearance di distanza dalla sagoma: tappa intermedia per chi è di
+    // fianco o dietro, così gira attorno alla cassa invece di spingerci contro dal retro.
+    public Vector3 GetFrontCornerPoint(Collider part, Vector3 position, float clearance)
+    {
+        Vector3 forward = GetCrateForward(part);
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
+        Vector3 center = part.bounds.center;
+        float side = Vector3.Dot(position - center, right) >= 0f ? 1f : -1f;
+        float halfWidth = GetFrontDepth(part, right);
+        return center
+            + right * side * (halfWidth + clearance)
+            + forward * (GetFrontDepth(part, forward) + clearance);
+    }
+
+    // Direzione "davanti" della cassa a cui appartiene part (il figlio diretto che lo
+    // contiene, vedi crates), sul piano orizzontale.
+    private Vector3 GetCrateForward(Collider part)
+    {
+        Transform crate = part.transform;
+        while (crate.parent != null && crate.parent != transform)
+        {
+            crate = crate.parent;
+        }
+
+        Vector3 forward = crate.forward;
+        forward.y = 0f;
+        return forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+    }
+
+    // Semi-spessore della sagoma di part lungo direction (orizzontale): distanza dal centro
+    // alla faccia su quel lato. I bounds sono allineati agli assi del mondo, ma le casse sono
+    // ruotate solo attorno a Y e di multipli di 90°, quindi coincidono con la sagoma reale.
+    private static float GetFrontDepth(Collider part, Vector3 direction)
+    {
+        Vector3 extents = part.bounds.extents;
+        return Mathf.Abs(direction.x) * extents.x + Mathf.Abs(direction.z) * extents.z;
+    }
+
+    // IEnemyAttackTarget: un SoundSystem già distrutto non va più toccato, stesso discorso
+    // della Console (vedi DJConsoleHealth.CanBeAttacked).
+    public bool CanBeAttacked => !isDestroyed;
+
     public void TakeHit()
     {
         if (isDestroyed)

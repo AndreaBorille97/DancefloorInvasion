@@ -2,19 +2,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Da mettere sul prefab del Raver, insieme a RaverHealth/RaverAttack/RaverChase. Gestisce
-// il power-up "giocoliere" (vedi PlayerJugglerSummon): quando viene attivato, il Raver più
-// vicino al Player (scelto da PlayerJugglerSummon) ci cammina sopra (RaverChase dirottato
-// con SetForcedPosition, stesso meccanismo usato da RaverHealth per la ChilloutZone) e
+// il giocoliere: un solo Raver in scena, fatto partire da PlayerJugglerSummon a inizio partita
+// nel punto in cui è stato messo (il suo "posto", homePosition). Il giocatore non lo comanda.
+// Quando deve raggiungere il posto ci cammina sopra (RaverChase dirottato con
+// SetForcedPosition, stesso meccanismo usato da RaverHealth per la ChilloutZone) e
 // smette di attaccare finché non arriva. Appena è a destinazione (hasArrived) comincia ad
 // attirare verso di sé gli Sbirro che gli si avvicinano entro attractionRadius (vedi
 // FindNearestAttractor, letto da EnemyChase/EnemyRangedAttack/IdroSbirroHoseAttack al posto
 // del loro bersaglio normale) e a "fare il giocoliere" (isPerforming): finché dura, aumenta
 // leggermente vita e danno di tutti i Raver in scena in quel momento (stesso schema di
 // RaverDrugBuff). Ce ne può essere solo uno alla volta in tutta la scena (vedi AnyJuggling,
-// applicato da BeginJuggling): finché uno è impegnato, un nuovo comando non ne sceglie un
-// altro, lo sposta semplicemente nel nuovo punto mirato (vedi Reposition, chiamato da
-// PlayerJugglerSummon tramite Active), interrompendo l'esibizione in corso se era già arrivato
-// a destinazione. Se però chiunque (non solo uno Sbirro: anche il Robosbirro,
+// applicato da BeginJuggling). Se però chiunque (non solo uno Sbirro: anche il Robosbirro,
 // il Player o il Camper) gli arriva ancora più addosso, entro dangerRadius, smette subito di
 // esibirsi, cioè si spengono SOLO i bonus di vita/danno (vedi PauseForDanger): l'attrazione
 // invece resta attiva per tutto il tempo da hasArrived in poi, pausa compresa, altrimenti gli
@@ -26,8 +24,8 @@ using UnityEngine;
 // abbattuto quasi subito; tolto il power-up torna un Raver come gli altri. Resta comunque un
 // bersaglio comodo proprio perché non si difende: se gli Sbirro lo abbattono, RaverHealth.OnDown interrompe subito
 // tutto (bonus e attrazione, e libera lo slot per un nuovo giocoliere), il Raver va a terra
-// e cammina alla ChilloutZone come qualunque altro Raver esausto; una volta rianimato torna
-// semplicemente a comportarsi come un Raver normale.
+// e cammina alla ChilloutZone come qualunque altro Raver esausto; una volta rianimato torna da
+// solo al suo posto e ricomincia l'esibizione da capo (vedi HandleRevived).
 //
 // L'unico segnale a schermo delle sue aree è una luce calda tremolante il cui raggio d'azione
 // è attractionRadius (vedi CreateFireLight): dangerRadius resta puramente logico, non è
@@ -52,7 +50,7 @@ public class RaverJuggler : MonoBehaviour
 
     [Header("Resistenza da giocoliere")]
     [Tooltip("Di quanto viene moltiplicata la vita di questo Raver mentre fa il giocoliere. Si applica al lancio e viene tolta quando va a terra, quindi vale per tutta l'esibizione, pause per pericolo comprese: in barriera, da guardia normale, è un Raver come tutti gli altri. Serve perché il giocoliere sta fermo e non si difende, quindi senza un margine di vita in più verrebbe abbattuto quasi subito.")]
-    [SerializeField] private float jugglingHealthMultiplier = 4f;
+    [SerializeField] private float jugglingHealthMultiplier = 2f;
 
     [Header("Arrivo")]
     [Tooltip("Distanza dalla posizione di lancio sotto la quale il Raver è considerato arrivato e comincia a fare il giocoliere: tienila di poco superiore a minApproachDistance di RaverChase, altrimenti non la raggiunge mai esattamente.")]
@@ -78,17 +76,10 @@ public class RaverJuggler : MonoBehaviour
     [SerializeField] private float fireLightHeight = 1.6f;
 
     // Il singolo giocoliere attualmente impegnato (da BeginJuggling fino a quando va a
-    // terra), null se nessuno: ci può essere solo un giocoliere alla volta, vedi BeginJuggling
-    // e AnyJuggling/Active (letti da PlayerJugglerSummon per ridirigere questo invece di
-    // sceglierne un altro finché lo slot resta occupato).
+    // terra), null se nessuno: ci può essere solo un giocoliere alla volta, vedi BeginJuggling.
     private static RaverJuggler activeJuggler;
 
-    // Usato da PlayerJugglerSummon.
     public static bool AnyJuggling => activeJuggler != null;
-
-    // Usato da PlayerJugglerSummon per ridirigere (Reposition) il giocoliere già attivo invece
-    // di sceglierne un altro, quando AnyJuggling è già true.
-    public static RaverJuggler Active => activeJuggler;
 
     // Con un solo giocoliere possibile alla volta (vedi activeJuggler), questo conta 0 o 1:
     // resta comunque un contatore (0 -> 1 applica il buff, 1 -> 0 lo toglie) invece di un
@@ -110,6 +101,10 @@ public class RaverJuggler : MonoBehaviour
     private RaverChase raverChase;
 
     private Vector3 targetPosition;
+    // Il posto del giocoliere: dove è stato fatto partire la prima volta (vedi BeginJuggling), e
+    // dove torna ogni volta che viene rianimato (vedi HandleRevived).
+    private Vector3 homePosition;
+    private bool hasHome;
     private bool isJuggling; // dal lancio fino a quando va a terra
     private bool hasArrived; // da quando raggiunge targetPosition a quando va a terra: governa l'attrazione, indipendente dalle pause
     private bool isPerforming; // solo mentre il buff di vita/danno è attivo, sotto hasArrived: si spegne durante una pausa per pericolo
@@ -129,7 +124,7 @@ public class RaverJuggler : MonoBehaviour
     // non c'è, e in quel caso il giocoliere si comporta esattamente come prima, senza fiamme.
     private PoiFireDance poiFire;
 
-    // Usato da PlayerJugglerSummon per scartare i Raver già impegnati come giocolieri.
+    // Usato da CamperVehicle per non mandare il giocoliere a pilotare il Camper.
     public bool IsJuggling => isJuggling;
 
     // Usato da EnemyChase/EnemyRangedAttack/IdroSbirroHoseAttack: il Transform del
@@ -162,6 +157,7 @@ public class RaverJuggler : MonoBehaviour
         raverChase = GetComponent<RaverChase>();
 
         raverHealth.OnDown += HandleGoDown;
+        raverHealth.OnRevived += HandleRevived;
 
         fireLight = CreateFireLight();
         flickerSeed = Random.value * 100f;
@@ -179,6 +175,7 @@ public class RaverJuggler : MonoBehaviour
     void OnDestroy()
     {
         raverHealth.OnDown -= HandleGoDown;
+        raverHealth.OnRevived -= HandleRevived;
 
         // Difensivo: i Raver normalmente non vengono mai distrutti (vanno a terra, non
         // Destroy), ma se succedesse mentre sta ancora esibendosi non deve lasciare il
@@ -342,15 +339,22 @@ public class RaverJuggler : MonoBehaviour
         return false;
     }
 
-    // Chiamato da PlayerJugglerSummon sul Raver scelto: lo dirotta subito verso position e gli
-    // fa smettere di attaccare (è impegnato a raggiungerla, poi a esibirsi). Ignorato se già
-    // a terra, già impegnato come giocoliere altrove, o se c'è già un altro giocoliere in
-    // scena (ce ne può essere solo uno alla volta, vedi activeJuggler).
+    // Chiamato da PlayerJugglerSummon a inizio partita, e da HandleRevived dopo ogni
+    // rianimazione: lo dirotta subito verso position e gli fa smettere di attaccare (è
+    // impegnato a raggiungerla, poi a esibirsi). Ignorato se già a terra, già impegnato come
+    // giocoliere, o se c'è già un altro giocoliere in scena (ce ne può essere solo uno alla
+    // volta, vedi activeJuggler).
     public void BeginJuggling(Vector3 position)
     {
         if (raverHealth.IsDown || isJuggling || AnyJuggling)
         {
             return;
+        }
+
+        if (!hasHome)
+        {
+            homePosition = position;
+            hasHome = true;
         }
 
         activeJuggler = this;
@@ -374,29 +378,16 @@ public class RaverJuggler : MonoBehaviour
         UpdateVisuals();
     }
 
-    // Chiamato da PlayerJugglerSummon (tramite Active) quando il giocoliere è già impegnato e
-    // arriva un nuovo comando: lo dirotta verso newPosition invece di lasciarlo dov'è o
-    // sceglierne un altro. Se era già arrivato e si stava esibendo, interrompe subito
-    // l'attrazione e il buff di gruppo (stessa logica di HandleGoDown/EndPerforming), che
-    // riprenderanno da capo solo quando arriverà alla nuova destinazione (vedi Arrive).
-    public void Reposition(Vector3 newPosition)
+    // Chiamato quando questo Raver viene rianimato (vedi RaverHealth.OnRevived): se è il
+    // giocoliere, cioè ha già un posto, ci torna a piedi e lì ricomincia da solo l'esibizione.
+    // RaverHealth.Reactivate lo ha appena rimesso da guardia normale con l'attacco acceso:
+    // BeginJuggling lo rispegne e lo dirotta verso homePosition.
+    private void HandleRevived()
     {
-        if (hasArrived)
+        if (hasHome)
         {
-            hasArrived = false;
-            activeAttractors.Remove(this);
+            BeginJuggling(homePosition);
         }
-
-        if (isPerforming)
-        {
-            EndPerforming();
-        }
-
-        isPausedForDanger = false;
-        dangerCheckTimer = 0f;
-        targetPosition = newPosition;
-        raverChase.SetForcedPosition(newPosition);
-        UpdateVisuals();
     }
 
     // Qualcuno è entrato entro dangerRadius mentre si esibiva: interrompe subito SOLO il buff
@@ -496,7 +487,7 @@ public class RaverJuggler : MonoBehaviour
 
         // Torna la vita da Raver normale. Qui currentHealth è già a zero (GoDown la azzera
         // prima di lanciare OnDown), quindi la divisione tocca di fatto solo il massimo: per
-        // essere rianimato dovrà risalire alla soglia normale, non a quella quadruplicata.
+        // essere rianimato dovrà risalire alla soglia normale, non a quella raddoppiata.
         raverHealth.MultiplyHealth(1f / jugglingHealthMultiplier);
 
         if (activeJuggler == this)

@@ -11,6 +11,15 @@ using UnityEngine;
 // anche nei genitori del collider colpito (GetComponentInParent), non solo sull'oggetto
 // esatto: il SoundSystem ad esempio ha il collider sulle casse figlie ("muro1..muro4"),
 // non sul GameObject radice dove sta lo script.
+//
+// I bersagli già fuori gioco vengono saltati (IEnemyAttackTarget.CanBeAttacked): in primo
+// luogo i Raver sconfitti, che restano solidi e in mezzo ai piedi mentre camminano verso la
+// ChilloutZone. Il controllo si ripete a fine carica, perché nel frattempo possono cadere.
+//
+// Eccezione: Console/DJ e SoundSystem non si attaccano a contatto ma a distanza, dal punto
+// di attacco davanti all'obiettivo in cui si ferma EnemyChase (vedi EnemyChase.IsAtObjective).
+// Il contatto fisico con loro viene ignorato: altrimenti i nemici dovrebbero schiacciarsi
+// contro le casse per colpirle, finendo per compenetrarle o infilarsi dietro la barriera.
 public class EnemyAttack : MonoBehaviour
 {
     [Header("Attacco")]
@@ -22,11 +31,54 @@ public class EnemyAttack : MonoBehaviour
     private IEnemyAttackTarget currentTarget;
     private bool onCooldown;
     private Animator animator;
+    private EnemyChase chase;
+    // true se la carica in corso è contro Console/SoundSystem (partita dalla distanza, vedi
+    // FixedUpdate): non va interrotta da OnCollisionExit, solo dall'allontanarsi dal punto di attacco.
+    private bool attackingObjective;
+
+    // true finché l'attacco è in corso: letto da EnemyChase, che nel frattempo tiene il nemico
+    // fermo e non gli fa cambiare bersaglio. Conta l'animazione, non solo la carica: lo stato di
+    // attacco dell'Animator (tag "Attack", vedi i controller Sbirro*New_Controller) dura più
+    // della carica e prosegue anche quando questa viene annullata perché il bersaglio si è
+    // staccato, e un nemico che scivola via o si gira a metà colpo sembrava cambiare idea.
+    // La carica resta nella condizione per il primo frame dopo SetTrigger, quando l'Animator
+    // non è ancora entrato nello stato.
+    public bool IsAttacking => attackRoutine != null || IsAttackAnimationPlaying();
+
+    private bool IsAttackAnimationPlaying()
+    {
+        if (animator == null || !animator.isActiveAndEnabled)
+        {
+            return false;
+        }
+
+        return animator.GetCurrentAnimatorStateInfo(0).IsTag("Attack")
+            || (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsTag("Attack"));
+    }
 
     void Awake()
     {
         // L'Animator sta sul modello figlio (es. RiotCop_Unity), non su questo GameObject.
         animator = GetComponentInChildren<Animator>();
+        chase = GetComponent<EnemyChase>();
+    }
+
+    void FixedUpdate()
+    {
+        if (attackRoutine != null || onCooldown || chase == null || !chase.IsAtObjective || chase.Target == null)
+        {
+            return;
+        }
+
+        IEnemyAttackTarget objective = chase.Target.GetComponent<IEnemyAttackTarget>();
+        if (objective == null || !objective.CanBeAttacked)
+        {
+            return;
+        }
+
+        attackingObjective = true;
+        currentTarget = objective;
+        attackRoutine = StartCoroutine(AttackRoutine());
     }
 
     void OnCollisionEnter(Collision collision)
@@ -44,7 +96,7 @@ public class EnemyAttack : MonoBehaviour
     void OnCollisionExit(Collision collision)
     {
         IEnemyAttackTarget target = collision.collider.GetComponentInParent<IEnemyAttackTarget>();
-        if (target == null || target != currentTarget)
+        if (attackingObjective || target == null || target != currentTarget)
         {
             return;
         }
@@ -63,11 +115,23 @@ public class EnemyAttack : MonoBehaviour
         }
 
         IEnemyAttackTarget target = other.GetComponentInParent<IEnemyAttackTarget>();
-        if (target == null)
+        if (target == null || !target.CanBeAttacked)
+        {
+            // CanBeAttacked: un Raver sconfitto (che sta andando in chillout o è già fermo lì)
+            // non va toccato. Il suo collider resta attivo apposta, quindi senza questo
+            // controllo ogni urto lungo il tragitto faceva partire un attacco completo — a
+            // vuoto, perché RaverHealth.TakeDamage scarta il danno, ma con tanto di animazione
+            // e soprattutto con questo Sbirro occupato per tutta la carica più il cooldown.
+            return;
+        }
+
+        // Console e SoundSystem si attaccano solo a distanza (vedi FixedUpdate), mai a contatto.
+        if (target is SoundSystem || target is DJConsoleHealth)
         {
             return;
         }
 
+        attackingObjective = false;
         currentTarget = target;
         attackRoutine = StartCoroutine(AttackRoutine());
     }
@@ -80,6 +144,21 @@ public class EnemyAttack : MonoBehaviour
         }
 
         yield return new WaitForSeconds(windupDuration);
+
+        // Ricontrollato qui e non solo alla partenza: durante la carica il bersaglio può essere
+        // stato messo fuori gioco da qualcun altro (tipico con più Sbirro addosso allo stesso
+        // Raver). In quel caso il colpo non parte e non scatta nemmeno il cooldown: questo
+        // Sbirro è libero subito di prendersela con qualcun altro, invece di restare fermo mezzo
+        // secondo a guardare un Raver che se ne sta andando in chillout.
+        // Contro un obiettivo il colpo va a segno solo se il nemico è ancora al suo punto di
+        // attacco: spinto via, o passato ad altro bersaglio (es. il Player in aggro), lo manca.
+        bool leftObjective = attackingObjective && (chase == null || !chase.IsAtObjective);
+        if (!currentTarget.CanBeAttacked || leftObjective)
+        {
+            attackRoutine = null;
+            currentTarget = null;
+            yield break;
+        }
 
         currentTarget.TakeHit();
         attackRoutine = null;

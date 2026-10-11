@@ -40,6 +40,9 @@ public class RaverAttack : MonoBehaviour
         }
     }
 
+    // Letto da RaverAnimation: true durante la carica di un colpo, è lì che parte il pugno.
+    public bool IsAttacking => attackRoutine != null;
+
     // Usato da RaverDrugBuff per raddoppiare/ripristinare il danno.
     public void MultiplyDamage(float factor)
     {

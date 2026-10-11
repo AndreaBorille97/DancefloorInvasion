@@ -9,8 +9,10 @@ using UnityEngine;
 // Quando la vita arriva a zero il Raver non sparisce: entra in stato "a terra" (isDown),
 // disabilita subito RaverAttack (non ingaggia più nessuno) e cambia colore, ma il collider
 // resta attivo così l'onda sonora del Player continua a rilevarlo e può rianimarlo; la
-// polizia lo ignora già da questo momento (vedi EnemyChase/EnemyRangedAttack, filtrano su
-// IsDown), anche mentre è ancora in cammino. Se in scena c'è una ChilloutZone, invece di
+// polizia lo ignora già da questo momento, anche mentre è ancora in cammino — sia come
+// bersaglio da inseguire (EnemyChase/EnemyRangedAttack/IdroSbirroHoseAttack, filtrano su
+// IsDown) sia come cosa da colpire a contatto (EnemyAttack e gli altri attacchi filtrano su
+// CanBeAttacked, che qui vale !isDown). Se in scena c'è una ChilloutZone, invece di
 // teletrasportarsi ci cammina sopra a piedi (RaverChase resta attivo, dirottato con
 // SetForcedPosition verso il suo centro, stesso meccanismo usato dal Camper ma verso un
 // punto fisso invece che un Transform): appena entra nella sua area (il BoxCollider della
@@ -83,6 +85,10 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     // RaverJuggler, per interrompere subito l'esibizione del giocoliere e i suoi bonus).
     public event System.Action OnDown;
 
+    // Il contrario di OnDown: il Raver è stato appena rianimato ed è di nuovo in piedi (es.
+    // RaverJuggler, per rimandare il giocoliere al suo posto a riprendere l'esibizione).
+    public event System.Action OnRevived;
+
     private Renderer raverRenderer;
     private MaterialPropertyBlock propertyBlock;
     private Color baseColor;
@@ -91,6 +97,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     // Usato da CamperVehicle/PlayerCamperSummon: un Raver a terra non può essere richiamato a pilotare il Camper.
     public bool IsDown => isDown;
+
+    // IEnemyAttackTarget: un Raver sconfitto non va più toccato da nessuno, né mentre cammina
+    // verso la ChilloutZone né una volta fermo lì. Il suo collider resta attivo apposta (serve
+    // al cono del Player per rianimarlo), quindi senza questo chi attacca a contatto lo
+    // incontrerebbe come un bersaglio qualunque — vedi il commento sull'interfaccia.
+    public bool CanBeAttacked => !isDown;
 
     // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta: riflette la
     // vita reale anche a terra, così si vede quanto manca alla rianimazione (che richiede
@@ -103,12 +115,6 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     {
         isInvulnerable = value;
     }
-
-    // Usato da PlayerJugglerSummon per non scegliere come giocoliere un Raver che sta già
-    // pilotando il Camper (vedi CamperVehicle.Mount/Dismount): a differenza del tragitto di
-    // avvicinamento (coperto da RaverChase.IsForced), una volta a bordo il forcedTarget viene
-    // sciolto, quindi serve questo controllo separato.
-    public bool IsInvulnerable => isInvulnerable;
 
     // Chiamato da RaverJuggler quando il buff di gruppo del giocoliere si attiva/disattiva
     // (vedi RaverJuggler.ApplyGroupBuff/RevertGroupBuff): mentre attivo, tinge il Raver di
@@ -345,6 +351,10 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         }
 
         ApplyPersistentColor();
+
+        // Per ultimo: chi ascolta trova il Raver già rimesso in piedi da guardia normale e può
+        // sovrascrivere quello che gli serve (il giocoliere, per esempio, rispegne l'attacco).
+        OnRevived?.Invoke();
     }
 
     // Lampo di colore che segnala visivamente il momento in cui l'onda sonora del Player cura

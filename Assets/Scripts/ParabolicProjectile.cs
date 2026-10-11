@@ -73,8 +73,11 @@ public class ParabolicProjectile : MonoBehaviour
             return;
         }
 
+        // CanBeAttacked: un Raver sconfitto non va colpito, e il fumogeno non deve nemmeno
+        // fermarsi su di lui — prosegue il suo arco come se non ci fosse, invece di esplodere
+        // addosso a qualcuno che sta solo attraversando la scena per andare in chillout.
         IEnemyAttackTarget target = other.GetComponentInParent<IEnemyAttackTarget>();
-        if (target == null)
+        if (target == null || !target.CanBeAttacked)
         {
             return;
         }

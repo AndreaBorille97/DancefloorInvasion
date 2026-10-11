@@ -7,6 +7,31 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Acciaio
+    second: {fileID: 2100000, guid: 7dc3791b6e15ea54794a0e01960c01ad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Manganello_Nero
+    second: {fileID: 2100000, guid: 804b32f3ed44ef641a5d7acc4a991761, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Nylon
+    second: {fileID: 2100000, guid: 7e74caa6e1bdb75419a54a2ede279a7d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Plastica_Nera
+    second: {fileID: 2100000, guid: fd5cc01e955ecd245b23c0c0b6a68a3e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Policarbonato
+    second: {fileID: 2100000, guid: c7d3123b9920a26469b381dee03e72e2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Sbirro2
     second: {fileID: 2100000, guid: 461c501530586044880125ce4fe29a94, type: 2}
   materials:

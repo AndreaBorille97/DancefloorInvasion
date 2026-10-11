@@ -135,7 +135,12 @@ public class SoundWaveProjectile : MonoBehaviour
             }
 
             alreadyHit.Add(hit);
-            hit.GetComponent<EnemyHealth>()?.TakeDamage(damage, transform.position);
+            EnemyHealth enemyHealth = hit.GetComponent<EnemyHealth>();
+            if (enemyHealth != null)
+            {
+                enemyHealth.TakeDamage(damage, transform.position);
+                HitEvents.RaiseEnemyHit(enemyHealth.gameObject, transform.position); // feedback di colpo (Hit*Feedback.cs)
+            }
         }
     }
 

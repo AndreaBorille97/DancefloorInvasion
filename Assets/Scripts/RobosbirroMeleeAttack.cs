@@ -64,7 +64,11 @@ public class RobosbirroMeleeAttack : MonoBehaviour
             return;
         }
 
-        if (other.GetComponentInParent<IEnemyAttackTarget>() == null)
+        // CanBeAttacked: un Raver sconfitto non fa nemmeno partire la carica (vedi
+        // IEnemyAttackTarget), altrimenti basterebbe che uno andasse in chillout passando qui
+        // accanto per tenere impegnato il boss.
+        IEnemyAttackTarget contact = other.GetComponentInParent<IEnemyAttackTarget>();
+        if (contact == null || !contact.CanBeAttacked)
         {
             return;
         }
@@ -83,8 +87,11 @@ public class RobosbirroMeleeAttack : MonoBehaviour
         Collider[] hits = Physics.OverlapSphere(transform.position, attackRadius);
         foreach (Collider hit in hits)
         {
+            // Ricontrollato qui e non solo alla partenza della carica: il fendente colpisce
+            // tutti quelli che si trovano nel raggio adesso, e nel frattempo qualcuno può
+            // essere caduto (vedi IEnemyAttackTarget.CanBeAttacked).
             IEnemyAttackTarget target = hit.GetComponentInParent<IEnemyAttackTarget>();
-            if (target == null)
+            if (target == null || !target.CanBeAttacked)
             {
                 continue;
             }

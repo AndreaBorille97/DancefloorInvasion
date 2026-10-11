@@ -47,6 +47,9 @@ public static class AmmoModelBuilder
         public string ModelSource;
         public float TargetSize;
         public Upright StandUp = Upright.ThinSideHorizontal;
+        // Rotazione di partenza del modello, prima di StandUp: serve quando l'ingombro da solo non
+        // basta a capire il verso (una placca quadrata in piedi può avere l'immagine di traverso).
+        public Vector3 ModelRotation = Vector3.zero;
         // Vuoto = la munizione ha un aspetto solo e si tengono i materiali del modello.
         public string[] VariantFolders = new string[0];
     }
@@ -74,11 +77,87 @@ public static class AmmoModelBuilder
         StandUp = Upright.LongestSideUp,
     };
 
+    // Il francobollo di Hoffman (materiale BicycleDayMat, già rimappato dall'import): è una placca,
+    // quindi in piedi col lato sottile rivolto a chi guarda, e un aspetto solo.
+    //
+    // Il modello viene da Blender: nella mesh l'alto dell'immagine è l'asse Z, e a raddrizzarlo ci
+    // pensava la rotazione di import (-90° su X) che però qui viene azzerata. La si rimette a mano:
+    // la placca resta in piedi uguale (gira attorno al suo lato sottile), ma l'uomo in bici torna
+    // dritto invece che coricato.
+    private static readonly Job HoffmanAmmo = new Job
+    {
+        PrefabPath = "Assets/Prefabs/HoffmanAmmo.prefab",
+        ModelSource = "Assets/Prefabs/models/hoffman.fbx",
+        // 30% più piccola delle altre ammo (1.3).
+        TargetSize = 0.91f,
+        ModelRotation = new Vector3(-90f, 0f, 0f),
+    };
+
+    // Lo spawner delle ammo Hoffman: quanto spesso ne nasce una, al massimo. Molto più rare delle
+    // scatole di stamina, un buco nero svuota mezza pista.
+    private const float HoffmanMaxSpawnInterval = 25f;
+
     [MenuItem("Tools/Rebuild Ammo Model/Speed (teschio, 3 varianti)")]
     private static void BuildSpeedAmmo() => Build(SpeedAmmo);
 
     [MenuItem("Tools/Rebuild Ammo Model/Camper (tanica)")]
     private static void BuildCamperAmmo() => Build(CamperAmmo);
+
+    // Oltre al modello, mette nella scena aperta lo spawner delle ammo Hoffman (se non c'è già),
+    // copiando il "floor" da uno spawner di ammo esistente. La scena resta da salvare.
+    [MenuItem("Tools/Rebuild Ammo Model/Hoffman (buco nero) + spawner in scena")]
+    private static void BuildHoffmanAmmo()
+    {
+        Build(HoffmanAmmo);
+        EnsureSpawner(HoffmanAmmo.PrefabPath, "HoffmanAmmoSpawner", HoffmanMaxSpawnInterval);
+    }
+
+    private static void EnsureSpawner(string prefabPath, string spawnerName, float maxSpawnInterval)
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefab == null)
+        {
+            return;
+        }
+
+        AmmoSpawner[] spawners = Object.FindObjectsByType<AmmoSpawner>(FindObjectsInactive.Include);
+        Object floor = null;
+        foreach (AmmoSpawner existing in spawners)
+        {
+            SerializedObject serialized = new SerializedObject(existing);
+            if (serialized.FindProperty("ammoPrefab").objectReferenceValue == prefab)
+            {
+                Debug.Log($"[AmmoModelBuilder] Lo spawner di {prefab.name} c'è già: \"{existing.name}\".");
+                return;
+            }
+
+            if (floor == null)
+            {
+                floor = serialized.FindProperty("floor").objectReferenceValue;
+            }
+        }
+
+        if (floor == null)
+        {
+            GameObject floorObject = GameObject.Find("floor");
+            floor = floorObject != null ? floorObject.transform : null;
+        }
+
+        GameObject spawnerObject = new GameObject(spawnerName);
+        Undo.RegisterCreatedObjectUndo(spawnerObject, "Crea " + spawnerName);
+        AmmoSpawner spawner = spawnerObject.AddComponent<AmmoSpawner>();
+
+        SerializedObject so = new SerializedObject(spawner);
+        so.FindProperty("ammoPrefab").objectReferenceValue = prefab;
+        so.FindProperty("floor").objectReferenceValue = floor;
+        so.FindProperty("maxSpawnInterval").floatValue = maxSpawnInterval;
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(spawnerObject.scene);
+
+        string floorNote = floor == null ? " ATTENZIONE: \"floor\" non trovato, assegnalo a mano." : "";
+        Debug.Log($"[AmmoModelBuilder] Creato \"{spawnerName}\" in scena: salva la scena.{floorNote}");
+    }
 
     private static void Build(Job job)
     {
@@ -130,7 +209,7 @@ public static class AmmoModelBuilder
             PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             model.name = ModelChildName;
             model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
+            model.transform.localRotation = Quaternion.Euler(job.ModelRotation);
             model.transform.localScale = Vector3.one;
 
             FitModel(model, prefab.transform, job.TargetSize, job.StandUp);
