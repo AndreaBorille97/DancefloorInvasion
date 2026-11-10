@@ -35,6 +35,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private float currentHealth;
 
+    // Letti dall'IdroSbirro per capire quanto ha incassato e quando ritirarsi.
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => maxHealth;
+
+    // I boss (IdroSbirro, CyberGiorgia) si abbattono solo a colpi: niente uccisioni sul colpo
+    // (scatto, Hoffman), niente conversione da serotonina, i colpi non li spostano.
+    public bool IsBoss => GetComponent<IdroSbirro>() != null || GetComponent<CyberGiorgiaBoss>() != null;
+
     void Awake()
     {
         currentHealth = maxHealth;
@@ -42,6 +50,30 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Spawnati fuori dal perimetro (vedi EnemySpawner piazzati oltre i muri), i nemici
         // devono poter entrare camminandoci attraverso invece di comparire dentro dal nulla.
         ArenaBounds.IgnoreCollisionsForEnemy(gameObject);
+    }
+
+    // In Start e non in Awake: i segni nascono attorno al modello, che va misurato quando è già
+    // al suo posto. Servono a riconoscere gli Sbirro nella ressa: lampeggiante sopra la testa e
+    // cerchio nero a terra (SbirroMarker). SbirroGroundAlign appoggia i piedi del modello sul
+    // pavimento, uguale per tutti i tipi, così il cerchio sta proprio sotto i piedi.
+    void Start()
+    {
+        // CyberGiorgia no: arriva dal cielo (vedi CyberGiorgiaBoss), e la pianta dei piedi misurata
+        // mentre cade verrebbe sballata. Il prefab ha già i piedi a terra, e la si riconosce dalla
+        // barra della vita senza bisogno di lampeggiante e cerchio.
+        if (GetComponent<CyberGiorgiaBoss>() != null)
+        {
+            return;
+        }
+
+        if (GetComponent<SbirroGroundAlign>() == null)
+        {
+            gameObject.AddComponent<SbirroGroundAlign>();
+        }
+        if (GetComponent<SbirroMarker>() == null)
+        {
+            gameObject.AddComponent<SbirroMarker>();
+        }
     }
 
     public void TakeDamage(float amount, Vector3 sourcePosition)
@@ -54,6 +86,32 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             Die(MeasureBlastDirection(sourcePosition));
         }
     }
+
+    // Chiamato dalle onde serotonina (SoundWaveProjectile.MakeSerotonin): stesso danno delle onde
+    // normali, ma il colpo che lo ucciderebbe lo converte invece (vedi SerotoninBrawl): torna a
+    // vita piena e passa dalla parte del Player. Chi non può essere convertito (IdroSbirro) non
+    // subisce niente.
+    public void TakeSerotoninDamage(float amount, Vector3 sourcePosition)
+    {
+        if (IsSwelling || !SerotoninBrawl.CanBrawl(this))
+        {
+            return;
+        }
+
+        if (currentHealth - amount > 0f)
+        {
+            TakeDamage(amount, sourcePosition);
+            return;
+        }
+
+        currentHealth = maxHealth;
+        SerotoninBrawl.Charm(this);
+        HitEvents.RaiseEnemyConverted(gameObject);
+    }
+
+    // true se è passato dalla parte del Player (vedi SerotoninBrawl): le onde del Player e i
+    // Raver lo lasciano stare.
+    public bool IsCharmed => TryGetComponent(out SerotoninBrawl brawl) && brawl.IsCharmed;
 
     // Chiamato da PlayerMovement.MoveDashThroughEnemies quando il Player attraversa questo
     // Sbirro durante uno scatto: muore sul colpo, qualunque vita gli restasse.
@@ -74,6 +132,30 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth = 0f;
         Die(FlattenOrRandom(-dashDirection));
     }
+
+    // Chiamato dall'Hoffman (PlayerHoffman): muore sul colpo ed esplode in colori psichedelici
+    // (PsychedelicExplosion) invece di schizzare via in polvere e occhi. I boss non esplodono:
+    // si abbattono solo a colpi.
+    public void HoffmanExplode()
+    {
+        if (currentHealth <= 0f || IsBoss || IsSwelling)
+        {
+            return;
+        }
+
+        // Prima si gonfia (HoffmanSwell), poi scoppia in bolle psichedeliche.
+        currentHealth = 0f;
+        IsSwelling = true;
+        HoffmanSwell.Begin(gameObject, () =>
+        {
+            PsychedelicExplosion.Spawn(gameObject);
+            HitEvents.RaiseEnemyKilled(gameObject);
+            Destroy(gameObject);
+        });
+    }
+
+    // true mentre si gonfia per l'Hoffman: è già morto, ogni altro colpo o morte va ignorato.
+    public bool IsSwelling { get; private set; }
 
     // Chiamato da CamperVehicle quando il mezzo guidato tocca questo Sbirro: una passata lo
     // uccide. La morte passa però da TakeDamage come tutte le altre, quindi valgono la polvere,
@@ -96,7 +178,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     // L'IdroSbirro usa anche lui EnemyHealth (per essere danneggiabile come gli altri Sbirro,
-    // vedi IdroSbirroHoseAttack) ma non deve sparire in polvere: troppo grosso e fisso per
+    // vedi IdroSbirro) ma non deve sparire in polvere: troppo grosso e fisso per
     // avere senso visivamente, resta semplicemente distrutto come prima di questa feature.
     //
     // blastDirection è la direzione in cui vola via lo schizzo rosso, e con lui gli occhi
@@ -105,12 +187,18 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     // scatto (TakeDashHit).
     private void Die(Vector3 blastDirection)
     {
-        if (GetComponent<IdroSbirroHoseAttack>() == null)
+        if (IsSwelling)
+        {
+            return;
+        }
+
+        if (GetComponent<IdroSbirro>() == null)
         {
             SpawnDeathDust(blastDirection);
             SpawnDeathEyes(MeasureHeadPoint(), blastDirection);
         }
 
+        HitEvents.RaiseEnemyKilled(gameObject);
         Destroy(gameObject);
     }
 
@@ -137,7 +225,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     // Un GameObject a sé con un ParticleSystem creato a runtime (nessun prefab da collegare
-    // a mano, stesso approccio di IdroSbirroWaterball per il fascio d'acqua): la polvere vola
+    // a mano, come si faceva per il getto dell'IdroSbirro): la polvere vola
     // via dal punto della morte lungo direction (vedi MeasureBlastDirection: la direzione
     // opposta a quella da cui è arrivato il colpo fatale), non un'esplosione uniforme in
     // tutte le direzioni.

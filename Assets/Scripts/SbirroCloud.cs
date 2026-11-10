@@ -21,6 +21,8 @@ public class SbirroCloud : MonoBehaviour
     [SerializeField] private Color cloudColor = new Color(1f, 1f, 1f, 0.35f);
     [Tooltip("Quanti puffi di fumo compongono la nuvola.")]
     [SerializeField] private int particleCount = 80;
+    [Tooltip("Spento = nessun fumo, resta solo l'area del danno (stesso raggio): la granata del boss si vede già col fungo atomico (vedi ParabolicProjectile.explosionScale).")]
+    [SerializeField] private bool showSmoke = true;
 
     // Stessi moltiplicatori usati in CreateVisual per shape.radius e per la dimensione
     // massima dei puffi: il trigger deve arrivare fin dove il fumo si vede davvero (il bordo
@@ -40,7 +42,10 @@ public class SbirroCloud : MonoBehaviour
         trigger.isTrigger = true;
         trigger.radius = DamageRadius;
 
-        CreateVisual();
+        if (showSmoke)
+        {
+            CreateVisual();
+        }
     }
 
     // Tiene il collider sincronizzato con DamageRadius anche in editor (non solo a runtime

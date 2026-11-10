@@ -28,21 +28,21 @@ namespace AirShot
         [Range(0.5f, 12f)] public float speed = 6f;
         [Range(0f, 1f)] public float trailSparks = 0f;
         [Range(0f, 3f)] public float boltThickness = 1.1f;
+        [Tooltip("Dispersione delle scintille di scia (la linea è retta).")]
         [Range(0f, 2f)] public float zigzag = 0.55f;
         [Tooltip("Frequenza di ridisegno del fulmine (stile cel animation).")]
         [Range(4f, 60f)] public float celFps = 12f;
-        [Tooltip("Secondi in cui il fulmine resta a schermo dissolvendosi, DOPO aver percorso " +
-                 "la distanza. Il volo dura 0.55/speed, che a speed 6 fa meno di un decimo di " +
-                 "secondo: senza questa coda il colpo è un lampo singolo e si fatica a vederlo. " +
-                 "Non rallenta il colpo, allunga solo la scia visibile.")]
-        [Range(0f, 1.5f)] public float boltHold = 0.28f;
 
         [Header("Onda d'urto (partenza)")]
         [Range(0, 4)] public int rings = 2;
         [Range(0f, 2f)] public float ringSpeed = 1f;
+        [Tooltip("Quanto si allargano le onde: moltiplica il raggio massimo (1 = come nella preview).")]
+        [Range(0.1f, 2f)] public float ringSize = 0.5f;
 
         [Header("Plasma")]
         [Range(0, 120)] public int density = 54;
+        [Tooltip("Dimensione delle particelle rilasciate (scintille, alone, detriti bianchi): 1 = come nella preview.")]
+        [Range(0.1f, 2f)] public float particleSize = 0.5f;
         public bool groundSparks = true;
 
         [Header("Impatto camera")]
@@ -61,12 +61,9 @@ namespace AirShot
         LineRenderer boltGlow;
         readonly List<Transform> ringTr = new List<Transform>();
         readonly List<Material> ringMats = new List<Material>();
-        ParticleSystem hotPs, glowPs;
+        ParticleSystem hotPs, glowPs, whitePs;
         Vector3 from, to;
         float t = -1f, travel, lastCel = -1f;
-        // Ultimo sfarfallio estratto da RebuildBolt: la dissolvenza lo riusa ad ogni frame,
-        // mentre il ridisegno gira solo a celFps.
-        float lastFlick = 1f;
         Vector3 shakeBase;
         bool shakeCached;
 
@@ -87,7 +84,7 @@ namespace AirShot
                 var go = new GameObject("AirShot_Ring" + i);
                 go.transform.SetParent(transform, false);
                 var mf = go.AddComponent<MeshFilter>();
-                mf.sharedMesh = BuildTorus(80, 6, 0.03f);
+                mf.sharedMesh = BuildTorus(96, 6, 0.025f);
                 var mr = go.AddComponent<MeshRenderer>();
                 var m = new Material(ringMat);
                 mr.sharedMaterial = m;
@@ -98,8 +95,12 @@ namespace AirShot
                 ringMats.Add(m);
             }
 
-            hotPs = CreateParticles("AirShot_Hot", hotColor, 0.09f, 0.34f, add);
-            glowPs = CreateParticles("AirShot_Glow", glowColor, 0.22f, 0.55f, add);
+            Texture2D soft = MakeDot(false), hard = MakeDot(true);
+            hotPs = CreateParticles("AirShot_Hot", hotColor, 0.09f, 0.34f, add, soft);
+            glowPs = CreateParticles("AirShot_Glow", glowColor, 0.22f, 0.55f, add, soft);
+            Shader alpha = Shader.Find("Sprites/Default");
+            whitePs = CreateParticles("AirShot_WhiteDebris", Color.white, 0.3f, 1.2f, alpha != null ? alpha : add, hard);
+            var wm = whitePs.main; wm.gravityModifier = 0.6f;
 
             SetVisible(false);
         }
@@ -123,7 +124,7 @@ namespace AirShot
             return lr;
         }
 
-        ParticleSystem CreateParticles(string n, Color c, float size, float life, Shader add)
+        ParticleSystem CreateParticles(string n, Color c, float size, float life, Shader add, Texture2D tex)
         {
             var go = new GameObject(n);
             go.transform.SetParent(transform, false);
@@ -158,7 +159,7 @@ namespace AirShot
                 new Keyframe(0f, 1f), new Keyframe(1f, 0.15f)));   // drag
 
             var tr = ps.GetComponent<ParticleSystemRenderer>();
-            tr.material = new Material(add) { color = Color.white };
+            tr.material = new Material(add) { color = Color.white, mainTexture = tex };
             tr.renderMode = ParticleSystemRenderMode.Billboard;
             tr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             tr.receiveShadows = false;
@@ -197,7 +198,7 @@ namespace AirShot
         {
             t = -1f;
             SetVisible(false);
-            hotPs.Clear(); glowPs.Clear();
+            hotPs.Clear(); glowPs.Clear(); whitePs.Clear();
         }
 
         // ------------------------------------------------------------- update
@@ -216,13 +217,7 @@ namespace AirShot
             UpdateRings(dir);
             UpdateShake();
 
-            // 1 durante il volo, poi scende a 0 in boltHold secondi: è la coda che rende il
-            // colpo leggibile senza allungarne la durata percepita.
-            float fade = t <= travel
-                ? 1f
-                : (boltHold > 0f ? Mathf.Clamp01(1f - (t - travel) / boltHold) : 0f);
-
-            if (fade > 0f)
+            if (t <= travel + 0.02f)
             {
                 float cel = Mathf.Floor(t * celFps);
                 if (!Mathf.Approximately(cel, lastCel))
@@ -230,20 +225,8 @@ namespace AirShot
                     lastCel = cel;
                     RebuildBolt(from + dir * 0.3f, head, dir);
                 }
-
-                // Colori applicati qui e non dentro RebuildBolt: quello gira a celFps (12 volte
-                // al secondo), quindi la dissolvenza ne uscirebbe a tre o quattro gradini.
-                boltMat.color = hotColor * (lastFlick * fade);
-                glowMat.color = glowColor * (0.3f * lastFlick * fade);
-
                 bolt.enabled = boltGlow.enabled = true;
-
-                // Solo mentre vola: a volo finito la testa è ferma sul punto d'arrivo e le
-                // scintille si ammucchierebbero tutte lì.
-                if (t <= travel)
-                {
-                    EmitTrailSparks(head, dir);
-                }
+                EmitTrailSparks(head, dir);
             }
             else
             {
@@ -270,18 +253,17 @@ namespace AirShot
             {
                 float f = (float)i / segs;
                 float taper = Mathf.Sin(Mathf.PI * f) * 0.6f + 0.4f;
-                float o1 = (i == 0 || i == segs) ? 0f : (Random.value - 0.5f) * zigzag * 1.5f * taper;
-                float o2 = (i == 0 || i == segs) ? 0f : (Random.value - 0.5f) * zigzag * 1.5f * taper;
+                float o1 = 0f, o2 = 0f;
                 Vector3 p = Vector3.Lerp(a, b, f) + side * o1 + up * o2;
                 bolt.SetPosition(i, p);
                 boltGlow.SetPosition(i, p);
             }
-            bolt.widthMultiplier = (0.035f * boltThickness * power + 0.02f) * 2f;
-            boltGlow.widthMultiplier = bolt.widthMultiplier * 3.2f;
+            bolt.widthMultiplier = (0.11f * boltThickness * power + 0.05f) * 2f;
+            boltGlow.widthMultiplier = bolt.widthMultiplier * 2.6f;
 
-            // Il colore vero lo applica Update ad ogni frame (vedi lastFlick/fade): qui si
-            // estrae solo il nuovo sfarfallio del fotogramma cel.
-            lastFlick = 0.75f + 0.25f * Random.value;
+            float flick = 0.75f + 0.25f * Random.value;
+            boltMat.color = hotColor * flick;
+            glowMat.color = glowColor * (0.3f * flick);
         }
 
         void UpdateRings(Vector3 dir)
@@ -291,17 +273,18 @@ namespace AirShot
             {
                 bool on = i < rings;
                 float a = t - i * 0.045f;
-                float al = on && a > 0f ? Mathf.Clamp01(1f - a / 0.55f) : 0f;
+                float al = on && a > 0f ? Mathf.Clamp01(1f - a / 0.42f) : 0f;
                 if (al <= 0f) { if (ringTr[i].gameObject.activeSelf) ringTr[i].gameObject.SetActive(false); continue; }
 
-                float rr = a * 22f * power * ringSpeed * Mathf.Pow(0.62f, i);
-                float push = 0.7f + i * (1.1f + a * 3.4f) * power + a * 2.2f;
+                float pop = 1f - Mathf.Pow(1f - Mathf.Clamp01(a / 0.42f), 4f);
+                float rr = (0.4f + pop * 9.5f) * power * ringSpeed * ringSize * Mathf.Pow(0.66f, i) * (1f + (Random.value - 0.5f) * 0.08f);
+                float push = 0.7f + i * (1.1f + a * 4.2f) * power + pop * 2.6f;
                 var tr = ringTr[i];
                 if (!tr.gameObject.activeSelf) tr.gameObject.SetActive(true);
                 tr.position = from + dir * push;
                 tr.rotation = rot;
-                tr.localScale = new Vector3(rr, rr, 1f + 8f * al * power);
-                ringMats[i].color = hotColor * (al * 0.8f * (1f - i * 0.12f));
+                tr.localScale = new Vector3(rr, rr * (1f + (Random.value - 0.5f) * 0.1f), 1f + 4f * al * power);
+                ringMats[i].color = hotColor * (Mathf.Min(1f, al * 1.4f) * (1f - i * 0.1f));
             }
         }
 
@@ -312,7 +295,7 @@ namespace AirShot
             if (!shakeCached) { shakeBase = cam.transform.localPosition; shakeCached = true; }
             if (t < 0.3f)
             {
-                float s = (1f - t / 0.3f) * cameraShake * 0.4f * power;
+                float s = (1f - t / 0.3f) * cameraShake * 0.85f * power;
                 cam.transform.localPosition = shakeBase + Random.insideUnitSphere * s;
             }
             else if (shakeCached)
@@ -331,12 +314,21 @@ namespace AirShot
             for (int i = 0; i < n; i++)
             {
                 float a = Random.value * Mathf.PI * 2f;
-                float sp = (7f + Random.value * 13f) * power;
+                float sp = (12f + Random.value * 24f) * power;
                 Vector3 radial = rot * new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f);
                 Vector3 vel = radial * sp + dir * (1.5f + Random.value * 6f) * power;
                 Vector3 pos = from + dir * 0.3f + radial * 0.35f;
                 Emit(hotPs, pos, vel, 0.28f + Random.value * 0.4f, 0.10f + Random.value * 0.16f);
                 if (i % 2 == 0) Emit(glowPs, pos, vel * 0.8f, 0.4f + Random.value * 0.5f, 0.12f + Random.value * 0.2f);
+            }
+            int nw = Mathf.RoundToInt(90 + density * 3f);
+            for (int i = 0; i < nw; i++)
+            {
+                float a = Random.value * Mathf.PI * 2f;
+                float sp = (10f + Random.value * 20f) * power;
+                Vector3 radial = rot * new Vector3(Mathf.Cos(a), Mathf.Sin(a) * 0.7f, 0f);
+                Vector3 vel = radial * sp + dir * (4f + Random.value * 14f) * power;
+                Emit(whitePs, from + dir * 0.4f + Random.insideUnitSphere * 0.2f, vel, 0.7f + Random.value * 0.8f, 0.32f + Random.value * 0.38f);
             }
         }
 
@@ -375,7 +367,7 @@ namespace AirShot
                 position = pos,
                 velocity = vel,
                 startLifetime = life,
-                startSize = size,
+                startSize = size * particleSize,
                 applyShapeToPosition = false
             };
             ps.Emit(ep, 1);
@@ -388,6 +380,22 @@ namespace AirShot
         }
 
         // ------------------------------------------------------------ utility
+        static Texture2D MakeDot(bool hard)
+        {
+            const int N = 64;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = hard ? "AirShotDisc" : "AirShotGlow" };
+            var px = new Color[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float r = new Vector2(x - N / 2f + 0.5f, y - N / 2f + 0.5f).magnitude / (N / 2f);
+                    float a = hard ? Mathf.Clamp01((1f - r) * 7f) : Mathf.Pow(Mathf.Clamp01(1f - r), 2.2f);
+                    px[y * N + x] = new Color(1f, 1f, 1f, a);
+                }
+            tex.SetPixels(px); tex.Apply();
+            return tex;
+        }
+
         static Mesh BuildTorus(int radial, int tubeSeg, float tubeR)
         {
             var verts = new Vector3[(radial + 1) * (tubeSeg + 1)];

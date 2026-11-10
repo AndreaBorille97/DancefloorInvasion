@@ -26,6 +26,8 @@ public class EnemyAttack : MonoBehaviour
     [Tooltip("Quanto dura la carica prima che il colpo vada a segno: il bersaglio ha questo tempo per allontanarsi ed evitarlo.")]
     [SerializeField] private float windupDuration = 1f;
     [SerializeField] private float cooldown = 1f; // pausa dopo un colpo andato a segno, prima di poter caricare un nuovo attacco
+    [Tooltip("Contro Console e SoundSystem la pausa fra un colpo e l'altro è cooldown per questo valore (2 = il doppio). Contro Raver e Player resta cooldown.")]
+    [SerializeField] private float objectiveCooldownMultiplier = 2f;
 
     private Coroutine attackRoutine;
     private IEnemyAttackTarget currentTarget;
@@ -107,8 +109,26 @@ public class EnemyAttack : MonoBehaviour
         currentTarget = null;
     }
 
+    // Spento da SerotoninBrawl mentre lo Sbirro è in rissa: una carica già partita non deve
+    // arrivare a segno (le coroutine non si fermano da sole quando il componente si spegne), e
+    // il prossimo attacco, a componente riacceso, deve poter partire subito.
+    void OnDisable()
+    {
+        StopAllCoroutines();
+        attackRoutine = null;
+        currentTarget = null;
+        onCooldown = false;
+    }
+
     private void TryStartAttack(Collider other)
     {
+        // Come RaverAttack: Unity chiama OnCollisionEnter/Stay anche sui componenti spenti.
+        // A fine partita (RoutState) chi scappa verso lo spawner non picchia più nessuno.
+        if (!enabled || RoutState.IsActive)
+        {
+            return;
+        }
+
         if (attackRoutine != null || onCooldown)
         {
             return; // carica già in corso, o in pausa dopo l'ultimo colpo
@@ -165,7 +185,7 @@ public class EnemyAttack : MonoBehaviour
         currentTarget = null;
 
         onCooldown = true;
-        yield return new WaitForSeconds(cooldown);
+        yield return new WaitForSeconds(attackingObjective ? cooldown * objectiveCooldownMultiplier : cooldown);
         onCooldown = false;
     }
 }

@@ -3,6 +3,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 
+// MECCANICA SPENTA: il Camper ora è solo un modello di scena. Sono stati tolti il comando L2
+// (PlayerCamperSummon, eliminato), lo spawner delle ammo tanica dalla scena e il quadrante
+// della benzina dall'HUD (FuelGaugeHUD.HideFuelDial). Questo componente resta sul mezzo perché
+// gli dà il collider solido, ma nessuno lo fa più guidare. Per riattivare tutto, recuperare
+// PlayerCamperSummon.cs e la scena dal commit 9c27c28 ("dancefloorinvasion_vanversion").
+//
 // Da mettere sul Camper piazzato in scena (Assets/Prefabs/Camper.prefab). Il suo Collider
 // viene forzato a Trigger in Awake, come serve allo script: non c'è niente da spuntare in scena.
 //
@@ -379,10 +385,10 @@ public class CamperVehicle : MonoBehaviour
             return;
         }
 
-        // L'IdroSbirro non si muove e non può essere investito: il Camper lo attraversa
+        // L'IdroSbirro è un camion e non può essere investito: il Camper lo attraversa
         // senza fargli danno, come se non ci fosse (usa EnemyHealth come gli altri Sbirro,
         // quindi va escluso esplicitamente prima del controllo generico qui sotto).
-        if (other.GetComponent<IdroSbirroHoseAttack>() != null)
+        if (other.GetComponent<IdroSbirro>() != null)
         {
             return;
         }
@@ -395,13 +401,6 @@ public class CamperVehicle : MonoBehaviour
             // Il punto d'impatto è il centro del modello, non il pivot: da lì parte la spinta
             // data allo Sbirro investito, e il pivot del Camper sta fuori dalla carrozzeria.
             enemyHealth.TakeCamperHit(transform.TransformPoint(modelLocalCenter));
-            return;
-        }
-
-        RobosbirroHealth robosbirroHealth = other.GetComponent<RobosbirroHealth>();
-        if (robosbirroHealth != null)
-        {
-            robosbirroHealth.TakeCamperHit();
         }
     }
 

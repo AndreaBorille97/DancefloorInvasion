@@ -1,15 +1,17 @@
 using UnityEngine;
 
-// Feedback di colpo n.1: il nemico colpito diventa per un attimo rosso.
-// Si iscrive da solo a HitEvents. Per toglierlo cancella questo file.
+// Feedback di colpo n.1: il nemico colpito diventa per un attimo rosso. Lo stesso lampo lo fa
+// il Player quando subisce un colpo (PlayerHealth.TakeHit chiama Flash).
+// Si iscrive da solo a HitEvents. Per toglierlo cancella questo file (e la chiamata in PlayerHealth).
 //
 // Scambia per pochi centesimi di secondo i materiali dei renderer con uno piatto e luminoso,
 // poi rimette gli originali: niente istanze di materiali (vedi memoria sul .material dei
 // renderer) e funziona qualunque shader abbia il nemico.
 public static class HitFlashFeedback
 {
-    private const float Duration = 0.07f;
-    private static readonly Color FlashColor = new Color(0.75f, 0.2f, 0.18f, 1f);
+    private const float Duration = 0.12f;
+    // Valori sopra 1: con HDR + bloom il nemico si accende davvero; senza, satura a un rosso pieno.
+    private static readonly Color FlashColor = new Color(1.5f, 0.12f, 0.08f, 1f);
 
     private static Material flashMaterial;
 
@@ -23,7 +25,13 @@ public static class HitFlashFeedback
 
     private static void OnEnemyHit(GameObject enemy, Vector3 origin, Vector3 direction)
     {
-        if (enemy == null)
+        Flash(enemy);
+    }
+
+    // Usato anche da PlayerHealth: il Player colpito fa lo stesso lampo dei nemici.
+    public static void Flash(GameObject target)
+    {
+        if (target == null)
         {
             return;
         }
@@ -33,10 +41,10 @@ public static class HitFlashFeedback
             flashMaterial = new Material(Shader.Find("Sprites/Default")) { color = FlashColor };
         }
 
-        Runner runner = enemy.GetComponent<Runner>();
+        Runner runner = target.GetComponent<Runner>();
         if (runner == null)
         {
-            runner = enemy.AddComponent<Runner>();
+            runner = target.AddComponent<Runner>();
         }
 
         runner.Flash(flashMaterial, Duration);

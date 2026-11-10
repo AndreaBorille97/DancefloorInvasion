@@ -13,8 +13,10 @@ using UnityEngine.UI;
 // punto in base a HealthFraction, i Raver sfumando dal verde (vita piena) al giallo al
 // rosso (vedi GetHealthColor) sia in piedi che a terra: a terra il colore riflette quanto
 // manca alla rianimazione (vedi RaverHealth.HealthFraction), non un grigio fisso. Sopra il
-// riquadro, un pannello con due contatori testuali ("Console: X/Y", "SoundSystem: X/Y")
-// mostra i colpi rimasti prima della distruzione (vedi RemainingHits/MaxHits).
+// riquadro, un pannello con due contatori testuali ("Console X/Y", "SoundSystem X/Y")
+// mostra i colpi rimasti prima della distruzione (vedi RemainingHits/MaxHits) e, sulla
+// stessa riga a destra, la probabilità che uno Sbirro punti dritto a quell'obiettivo
+// (EnemyChase.GetDirectAttackChance): verde a 0%, rosso a 100%.
 public class MinimapUI : MonoBehaviour
 {
     [Header("Aggiornamento")]
@@ -22,7 +24,10 @@ public class MinimapUI : MonoBehaviour
     [SerializeField] private float refreshInterval = 0.2f;
 
     [Header("Sfondo")]
-    [SerializeField] private Color backgroundColor = new Color(0f, 0f, 0f, 0.55f);
+    [SerializeField] private Color backgroundColor = new Color(0f, 0f, 0f, 0.75f);
+    [Tooltip("Bordo attorno al riquadro della minimappa, per staccarlo dal gioco dietro.")]
+    [SerializeField] private Color borderColor = new Color(1f, 1f, 1f, 0.6f);
+    [SerializeField] private float borderThickness = 2f;
 
     [Header("Colori")]
     [SerializeField] private Color playerColor = Color.white;
@@ -31,27 +36,40 @@ public class MinimapUI : MonoBehaviour
     [SerializeField] private Color sbirroColor = new Color(0.9f, 0.2f, 0.2f);
 
     [Header("Dimensioni punti")]
-    [SerializeField] private float playerDotSize = 10f;
+    [SerializeField] private float playerDotSize = 14f;
     [Tooltip("Dimensione massima del punto di Console/SoundSystem: scala in giù verso il 40% man mano che la vita scende.")]
-    [SerializeField] private float objectiveDotSize = 14f;
-    [SerializeField] private float raverDotSize = 6f;
-    [SerializeField] private float sbirroDotSize = 6f;
+    [SerializeField] private float objectiveDotSize = 20f;
+    [SerializeField] private float raverDotSize = 9f;
+    [SerializeField] private float sbirroDotSize = 9f;
 
     [Header("Contatori vita Console/SoundSystem")]
-    [Tooltip("Pannello con i due contatori testuali (\"Console: X/Y\", \"SoundSystem: X/Y\"), posizionato appena sopra il riquadro della minimappa.")]
-    [SerializeField] private float counterPanelHeight = 56f;
+    [Tooltip("Pannello con i due contatori testuali (\"Console X/Y\", \"SoundSystem X/Y\"), posizionato appena sopra il riquadro della minimappa.")]
+    [SerializeField] private float counterPanelHeight = 68f;
     [SerializeField] private float counterPanelSpacing = 4f; // spazio tra il riquadro della minimappa e il pannello contatori sopra (e tra quel pannello e il countdown, vedi CreateCountdownLabel)
-    [SerializeField] private int counterFontSize = 22;
+    [SerializeField] private int counterFontSize = 24;
     [Tooltip("Colore usato solo quando Console/SoundSystem non esistono ancora (testo \"--\"): a bersaglio vivo il colore è invece dinamico in base alla vita rimasta, vedi GetHealthColor.")]
     [SerializeField] private Color counterTextColor = Color.white;
+    [Tooltip("Parte della riga occupata dalla vita, a sinistra: il resto, a destra, è per la probabilità di attacco.")]
+    [Range(0.4f, 0.8f)]
+    [SerializeField] private float healthColumnFraction = 0.64f;
+    [Tooltip("Riga in cima al pannello con la scritta \"attacco nemico\", sopra la colonna delle percentuali.")]
+    [SerializeField] private float threatHeaderHeight = 22f;
+    [SerializeField] private int threatHeaderFontSize = 16;
+    [SerializeField] private Color threatSafeColor = new Color(0.3f, 1f, 0.4f, 1f);
+    [SerializeField] private Color threatDangerColor = new Color(1f, 0.2f, 0.15f, 1f);
 
     [Header("Countdown vittoria")]
     [Tooltip("Pannello col conto alla rovescia dei secondi rimasti per vincere (vedi SurvivalTimer.RemainingSeconds), posizionato sopra il pannello dei contatori vita.")]
-    [SerializeField] private float countdownPanelHeight = 30f;
-    [SerializeField] private int countdownFontSize = 16;
+    [SerializeField] private float countdownPanelHeight = 36f;
+    [SerializeField] private int countdownFontSize = 24;
     [SerializeField] private Color countdownTextColor = Color.white;
 
     private RectTransform rectTransform;
+
+    // Cima dell'ultimo pannello impilato sopra il riquadro (il countdown), nelle coordinate locali
+    // della minimappa: sopra ci si mette la barra vita del Player (vedi FuelGaugeHUD.BuildLifeBar).
+    public float TopY { get; private set; }
+    public float PanelSpacing => counterPanelSpacing;
     private float timer;
 
     private Image playerIcon;
@@ -61,6 +79,9 @@ public class MinimapUI : MonoBehaviour
     private readonly List<Image> sbirroIcons = new List<Image>();
     private Text consoleCounter;
     private Text soundSystemCounter;
+    private Text consoleThreat;
+    private Text soundSystemThreat;
+    private readonly Dictionary<Text, string> threatTextKeys = new Dictionary<Text, string>(); // ultimo testo scritto, vedi FitThreatText
     private Text countdownLabel;
     private float healthPanelTopY; // bordo superiore del pannello contatori vita, usato per impilarci sopra il countdown
 
@@ -107,14 +128,17 @@ public class MinimapUI : MonoBehaviour
         DJConsoleHealth console = FindAnyObjectByType<DJConsoleHealth>();
         UpdateSingleIcon(consoleIcon, console != null ? console.transform : null, bounds,
             console != null ? Mathf.Lerp(objectiveDotSize * 0.4f, objectiveDotSize, console.HealthFraction) : objectiveDotSize);
-        consoleCounter.text = console != null ? $"Console: {console.RemainingHits}/{console.MaxHits}" : "Console: --";
+        consoleCounter.text = console != null ? $"Console {console.RemainingHits}/{console.MaxHits}" : "Console --";
         consoleCounter.color = console != null ? GetHealthColor(console.HealthFraction) : counterTextColor;
+        RefreshThreat(consoleThreat, console != null ? console.transform : null);
 
         SoundSystem soundSystem = FindAnyObjectByType<SoundSystem>();
         UpdateSingleIcon(soundSystemIcon, soundSystem != null ? soundSystem.transform : null, bounds,
             soundSystem != null ? Mathf.Lerp(objectiveDotSize * 0.4f, objectiveDotSize, soundSystem.HealthFraction) : objectiveDotSize);
-        soundSystemCounter.text = soundSystem != null ? $"SoundSystem: {soundSystem.RemainingHits}/{soundSystem.MaxHits}" : "SoundSystem: --";
+        soundSystemCounter.text = soundSystem != null ? $"SoundSystem {soundSystem.RemainingHits}/{soundSystem.MaxHits}" : "SoundSystem --";
         soundSystemCounter.color = soundSystem != null ? GetHealthColor(soundSystem.HealthFraction) : counterTextColor;
+        RefreshThreat(soundSystemThreat, soundSystem != null ? soundSystem.transform : null);
+        MatchCounterFontSize();
 
         RefreshGroup(FindObjectsByType<RaverHealth>(FindObjectsSortMode.None), raverIcons, "Raver", bounds,
             (raver, icon) =>
@@ -141,6 +165,61 @@ public class MinimapUI : MonoBehaviour
         {
             countdownLabel.text = "--:--";
         }
+    }
+
+    // Probabilità che uno Sbirro punti dritto all'obiettivo invece di fermarsi alle guardie:
+    // guardie a terra / guardie totali, la stessa del tiro a sorte in EnemyChase. Accanto, più
+    // piccoli, i due numeri da cui viene.
+    private void RefreshThreat(Text threat, Transform objective)
+    {
+        if (objective == null)
+        {
+            threat.text = "--";
+            threat.color = counterTextColor;
+            threatTextKeys.Remove(threat);
+            return;
+        }
+
+        float chance = EnemyChase.GetDirectAttackChance(objective, out int guardCount, out int downGuards);
+        string percent = $"{Mathf.RoundToInt(chance * 100f)}%";
+        string counts = $"{downGuards}/{guardCount}";
+        FitThreatText(threat, percent, counts);
+        threat.color = Color.Lerp(threatSafeColor, threatDangerColor, chance);
+    }
+
+    // "45%  4/14", coi numeri a ThreatCountsScale del corpo della percentuale: il corpo più
+    // grande (fino a counterFontSize) a cui tutto sta nella colonna, che è stretta. Si ricalcola
+    // solo quando il testo cambia.
+    private const float ThreatCountsScale = 0.6f;
+
+    private void FitThreatText(Text threat, string percent, string counts)
+    {
+        string key = percent + "|" + counts;
+        if (threatTextKeys.TryGetValue(threat, out string last) && last == key)
+        {
+            return;
+        }
+        threatTextKeys[threat] = key;
+
+        float available = threat.rectTransform.rect.width;
+        int size = counterFontSize;
+        for (; size > 10; size--)
+        {
+            threat.fontSize = size;
+            threat.text = ThreatText(percent, counts, size);
+            if (threat.preferredWidth <= available)
+            {
+                break;
+            }
+        }
+
+        threat.fontSize = size;
+        threat.text = ThreatText(percent, counts, size);
+    }
+
+    private static string ThreatText(string percent, string counts, int size)
+    {
+        return $"{percent}  <size={Mathf.Max(8, Mathf.RoundToInt(size * ThreatCountsScale))}>{counts}</size>";
     }
 
     private void RefreshGroup<T>(T[] items, List<Image> pool, string label, Bounds bounds, Action<T, Image> configure) where T : Component
@@ -220,6 +299,34 @@ public class MinimapUI : MonoBehaviour
         backgroundRect.anchorMax = Vector2.one;
         backgroundRect.offsetMin = Vector2.zero;
         backgroundRect.offsetMax = Vector2.zero;
+
+        CreateBorder();
+    }
+
+    // Quattro strisce sottili lungo i lati del riquadro, appena dentro: un'Outline sull'Image di
+    // sfondo non basta, perché su un rettangolo semitrasparente si vede solo come un alone.
+    private void CreateBorder()
+    {
+        CreateBorderSide("BorderTop", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -borderThickness), Vector2.zero);
+        CreateBorderSide("BorderBottom", new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, borderThickness));
+        CreateBorderSide("BorderLeft", new Vector2(0f, 0f), new Vector2(0f, 1f), Vector2.zero, new Vector2(borderThickness, 0f));
+        CreateBorderSide("BorderRight", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-borderThickness, 0f), Vector2.zero);
+    }
+
+    private void CreateBorderSide(string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+    {
+        GameObject sideObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        sideObject.transform.SetParent(rectTransform, false);
+
+        Image side = sideObject.GetComponent<Image>();
+        side.color = borderColor;
+        side.raycastTarget = false;
+
+        RectTransform sideRect = side.rectTransform;
+        sideRect.anchorMin = anchorMin;
+        sideRect.anchorMax = anchorMax;
+        sideRect.offsetMin = offsetMin;
+        sideRect.offsetMax = offsetMax;
     }
 
     private Image CreateIcon(string name, Color color)
@@ -245,7 +352,8 @@ public class MinimapUI : MonoBehaviour
     private void CreateHealthCounters()
     {
         float boxTop = rectTransform.rect.height * 0.5f;
-        float panelCenterY = boxTop + counterPanelSpacing + counterPanelHeight * 0.5f;
+        float panelHeight = counterPanelHeight + threatHeaderHeight;
+        float panelCenterY = boxTop + counterPanelSpacing + panelHeight * 0.5f;
 
         GameObject panelObject = new GameObject("HealthCountersBackground", typeof(RectTransform), typeof(Image));
         panelObject.transform.SetParent(rectTransform, false);
@@ -258,14 +366,47 @@ public class MinimapUI : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(rectTransform.rect.width, counterPanelHeight);
+        panelRect.sizeDelta = new Vector2(rectTransform.rect.width, panelHeight);
         panelRect.anchoredPosition = new Vector2(0f, panelCenterY);
 
-        float rowHeight = counterPanelHeight * 0.5f;
-        consoleCounter = CreateCounterLabel("ConsoleCounter", panelCenterY + rowHeight * 0.5f, rowHeight);
-        soundSystemCounter = CreateCounterLabel("SoundSystemCounter", panelCenterY - rowHeight * 0.5f, rowHeight);
+        // In cima, una volta sola, cosa sono le percentuali della colonna di destra. Parte da
+        // metà riga così la scritta, più larga della colonna, ci sta senza andare a capo.
+        float panelTop = panelCenterY + panelHeight * 0.5f;
+        Text header = CreateCounterLabel("ThreatHeader", panelTop - threatHeaderHeight * 0.5f, threatHeaderHeight,
+            0.3f, 1f, TextAnchor.MiddleRight, threatHeaderFontSize);
+        header.text = "attacco nemico";
 
-        healthPanelTopY = panelCenterY + counterPanelHeight * 0.5f;
+        // Ogni riga: vita a sinistra, probabilità di attacco a destra.
+        float rowHeight = counterPanelHeight * 0.5f;
+        float rowsCenterY = panelTop - threatHeaderHeight - counterPanelHeight * 0.5f;
+        float consoleY = rowsCenterY + rowHeight * 0.5f;
+        float soundSystemY = rowsCenterY - rowHeight * 0.5f;
+        consoleCounter = CreateCounterLabel("ConsoleCounter", consoleY, rowHeight, 0f, healthColumnFraction, TextAnchor.MiddleLeft, counterFontSize);
+        soundSystemCounter = CreateCounterLabel("SoundSystemCounter", soundSystemY, rowHeight, 0f, healthColumnFraction, TextAnchor.MiddleLeft, counterFontSize);
+        consoleThreat = CreateCounterLabel("ConsoleThreat", consoleY, rowHeight, healthColumnFraction, 1f, TextAnchor.MiddleRight, counterFontSize);
+        soundSystemThreat = CreateCounterLabel("SoundSystemThreat", soundSystemY, rowHeight, healthColumnFraction, 1f, TextAnchor.MiddleRight, counterFontSize);
+
+        healthPanelTopY = panelTop;
+    }
+
+    // Stesso corpo per le due scritte della vita: il più grande (fino a counterFontSize) a cui
+    // la più lunga delle due, di solito "SoundSystem X/Y", sta ancora nella sua colonna.
+    private void MatchCounterFontSize()
+    {
+        float available = consoleCounter.rectTransform.rect.width;
+        int size = counterFontSize;
+        for (; size > 10; size--)
+        {
+            consoleCounter.fontSize = size;
+            soundSystemCounter.fontSize = size;
+            if (consoleCounter.preferredWidth <= available && soundSystemCounter.preferredWidth <= available)
+            {
+                break;
+            }
+        }
+
+        consoleCounter.fontSize = size;
+        soundSystemCounter.fontSize = size;
     }
 
     // Pannello del countdown, impilato subito sopra il pannello dei contatori vita (stesso
@@ -273,6 +414,7 @@ public class MinimapUI : MonoBehaviour
     private void CreateCountdownLabel()
     {
         float panelCenterY = healthPanelTopY + counterPanelSpacing + countdownPanelHeight * 0.5f;
+        TopY = panelCenterY + countdownPanelHeight * 0.5f;
 
         GameObject panelObject = new GameObject("CountdownBackground", typeof(RectTransform), typeof(Image));
         panelObject.transform.SetParent(rectTransform, false);
@@ -294,6 +436,7 @@ public class MinimapUI : MonoBehaviour
         countdownLabel = labelObject.GetComponent<Text>();
         countdownLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         countdownLabel.fontSize = countdownFontSize;
+        countdownLabel.fontStyle = FontStyle.Bold;
         countdownLabel.alignment = TextAnchor.MiddleCenter;
         countdownLabel.color = countdownTextColor;
         countdownLabel.raycastTarget = false;
@@ -304,9 +447,22 @@ public class MinimapUI : MonoBehaviour
         labelRect.pivot = new Vector2(0.5f, 0.5f);
         labelRect.sizeDelta = new Vector2(rectTransform.rect.width - 8f, countdownPanelHeight);
         labelRect.anchoredPosition = new Vector2(0f, panelCenterY);
+        AddTextOutline(labelObject);
     }
 
-    private Text CreateCounterLabel(string name, float y, float rowHeight)
+    // Contorno scuro sotto le scritte: restano leggibili anche quando il colore (giallo,
+    // verde chiaro) è vicino a quello di ciò che c'è dietro.
+    private static void AddTextOutline(GameObject labelObject)
+    {
+        Outline outline = labelObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+    }
+
+    // Etichetta su una riga del pannello contatori, fra le frazioni from..to della sua larghezza.
+    // Niente Best Fit: Console e SoundSystem lo farebbero a corpi diversi (la seconda scritta è
+    // più lunga), le loro misure le allinea MatchCounterFontSize.
+    private Text CreateCounterLabel(string name, float y, float rowHeight, float from, float to, TextAnchor alignment, int fontSize)
     {
         GameObject labelObject = new GameObject(name, typeof(RectTransform), typeof(Text));
         labelObject.transform.SetParent(rectTransform, false);
@@ -314,23 +470,24 @@ public class MinimapUI : MonoBehaviour
         Text label = labelObject.GetComponent<Text>();
         label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         label.fontStyle = FontStyle.Bold;
-        // Best Fit invece di un fontSize fisso: "SoundSystem: X/Y" è più lungo di
-        // "Console: X/Y" e allo stesso counterFontSize non ci stava (andava a capo e si
-        // tagliava fuori dalla riga) — così ognuna delle due etichette usa il più grande
-        // corpo che entra nella sua riga, invece di uno unico tarato sulla più corta.
-        label.resizeTextForBestFit = true;
-        label.resizeTextMinSize = 10;
-        label.resizeTextMaxSize = counterFontSize;
-        label.alignment = TextAnchor.MiddleCenter;
+        label.fontSize = fontSize;
+        label.horizontalOverflow = HorizontalWrapMode.Overflow; // mai a capo: al massimo sborda di poco
+        label.alignment = alignment;
         label.color = counterTextColor;
         label.raycastTarget = false;
+
+        const float padding = 8f;
+        float width = rectTransform.rect.width;
+        float left = from * width + padding;
+        float right = to * width - padding;
 
         RectTransform labelRect = label.rectTransform;
         labelRect.anchorMin = new Vector2(0.5f, 0.5f);
         labelRect.anchorMax = new Vector2(0.5f, 0.5f);
         labelRect.pivot = new Vector2(0.5f, 0.5f);
-        labelRect.sizeDelta = new Vector2(rectTransform.rect.width - 8f, rowHeight);
-        labelRect.anchoredPosition = new Vector2(0f, y);
+        labelRect.sizeDelta = new Vector2(right - left, rowHeight);
+        labelRect.anchoredPosition = new Vector2((left + right) * 0.5f - width * 0.5f, y);
+        AddTextOutline(labelObject);
 
         return label;
     }

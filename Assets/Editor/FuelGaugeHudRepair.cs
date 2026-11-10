@@ -63,13 +63,6 @@ public static class FuelGaugeHudRepair
             hud.lifeSegments = segments;
         }
 
-        // I colori vanno riscritti da qui e non basta cambiarli nel codice: in scena erano già
-        // salvati i vecchi valori (segmenti verdi e consumati grigio scuro), e un valore già
-        // serializzato ha sempre la meglio sul default della classe. Finché non li si sovrascrive,
-        // cambiare il codice non si vedrebbe.
-        hud.lifeOn = Color.white;
-        hud.lifeOff = new Color(1f, 1f, 1f, 0f); // trasparente: il segmento consumato sparisce
-
         EditorUtility.SetDirty(hud);
         EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
 
@@ -84,5 +77,73 @@ public static class FuelGaugeHudRepair
 
         EditorUtility.DisplayDialog("HUD", message, "OK");
         Debug.Log($"[HUD] {message.Replace('\n', ' ')}", hud);
+    }
+
+    // Il pad del controller veniva costruito solo in Play (FuelGaugeHUD.BuildController), quindi
+    // in Game fuori dal Play si vedeva ancora la vecchia barra col fulmine e il numero degli
+    // scatti. Qui il pad e le sue scritte diventano oggetti veri della scena, e il vecchio
+    // contatore scatti (fulmine + numero) viene tolto: a runtime FuelGaugeHUD ritrova il pad per
+    // nome ("controller") e non ne costruisce un altro. Rilanciarlo non crea doppioni: rimette
+    // solo i segmenti vita centrati sotto il pad.
+    [MenuItem("Tools/HUD/Salva il pad in scena")]
+    private static void BakeController()
+    {
+        FuelGaugeHUD hud = Object.FindAnyObjectByType<FuelGaugeHUD>();
+        if (hud == null)
+        {
+            EditorUtility.DisplayDialog("HUD", "Nessun FuelGaugeHUD nella scena aperta. Apri GameplayV2 e riprova.", "OK");
+            return;
+        }
+        if (hud.controllerTexture == null)
+        {
+            EditorUtility.DisplayDialog("HUD", "Sul FuelGaugeHUD manca l'immagine del controller (Controller Texture).", "OK");
+            return;
+        }
+
+        Undo.RegisterFullObjectHierarchyUndo(hud.gameObject, "Salva il pad in scena");
+        bool existed = hud.GetComponentsInChildren<RawImage>(true).Any(image => image.name == "controller");
+
+        RectTransform controller = hud.BakeController();
+        if (controller == null)
+        {
+            EditorUtility.DisplayDialog("HUD", "Non ho trovato i segmenti vita (\"" + SegmentName + "\") sotto l'HUD: niente su cui mettere il pad.", "OK");
+            return;
+        }
+        if (!existed) Undo.RegisterCreatedObjectUndo(controller.gameObject, "Salva il pad in scena");
+
+        int removed = RemoveDashCounter(hud);
+
+        EditorUtility.SetDirty(hud);
+        EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
+        Selection.activeGameObject = controller.gameObject;
+
+        string message = (existed ? "Il pad c'era già: segmenti vita ricentrati sotto." : "Pad salvato in scena (oggetto \"controller\").") +
+                         (removed > 0 ? " Tolto il vecchio contatore scatti." : "") +
+                         " Salva la scena (Ctrl+S).";
+        Debug.Log("[HUD] " + message, controller);
+    }
+
+    // Fulmine e numero degli scatti, con il loro contenitore se resta vuoto ("SpeedUpCounter").
+    private static int RemoveDashCounter(FuelGaugeHUD hud)
+    {
+        var doomed = hud.GetComponentsInChildren<Image>(true)
+            .Where(image => image.name.ToLowerInvariant().Contains("bolt"))
+            .Select(image => image.gameObject)
+            .ToList();
+        if (hud.dashCountLabel != null) doomed.Add(hud.dashCountLabel.gameObject);
+        hud.dashCountLabel = null;
+
+        int removed = 0;
+        foreach (GameObject go in doomed.Distinct())
+        {
+            Transform parent = go.transform.parent;
+            Undo.DestroyObjectImmediate(go);
+            removed++;
+            if (parent != null && parent != hud.transform && parent.childCount == 0 && parent.GetComponents<Component>().Length == 1)
+            {
+                Undo.DestroyObjectImmediate(parent.gameObject);
+            }
+        }
+        return removed;
     }
 }

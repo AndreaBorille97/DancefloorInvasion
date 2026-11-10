@@ -52,6 +52,9 @@ public static class AmmoModelBuilder
         public Vector3 ModelRotation = Vector3.zero;
         // Vuoto = la munizione ha un aspetto solo e si tengono i materiali del modello.
         public string[] VariantFolders = new string[0];
+        // Se c'è, va su tutti i renderer del modello: per i modelli del generatore, dove il
+        // materiale interno dell'import è grigio (vedi LoadVariantMaterials).
+        public string MaterialPath;
     }
 
     private static readonly Job SpeedAmmo = new Job
@@ -92,6 +95,22 @@ public static class AmmoModelBuilder
         TargetSize = 0.91f,
         ModelRotation = new Vector3(-90f, 0f, 0f),
     };
+
+    // La cima (BHUSTE/CIMA.fbx, materiale Meshy_AI_Golden_Green_Bud con la texture tinta di verde scuro
+    // CIMA_TEXT_VERDE_SCURO): prima il LifeUp aveva lifeup.fbx, lo stesso modello dell'anfetamina
+    // (SpeedBoostAmmo), e in partita le due ammo si confondevano. Una cima sta in piedi sul lato
+    // lungo, come una bottiglia.
+    private static readonly Job LifeUpAmmo = new Job
+    {
+        PrefabPath = "Assets/Prefabs/LifeUpAmmo.prefab",
+        ModelSource = "Assets/Prefabs/models/BHUSTE/CIMA.fbx",
+        TargetSize = 1.3f,
+        StandUp = Upright.LongestSideUp,
+        MaterialPath = "Assets/Prefabs/models/BHUSTE/Materials/Meshy_AI_Golden_Green_Bud_20261101_texture.mat",
+    };
+
+    [MenuItem("Tools/Rebuild Ammo Model/LifeUp (cima)")]
+    private static void BuildLifeUpAmmo() => Build(LifeUpAmmo);
 
     // Lo spawner delle ammo Hoffman: quanto spesso ne nasce una, al massimo. Molto più rare delle
     // scatole di stamina, un buco nero svuota mezza pista.
@@ -222,6 +241,26 @@ public static class AmmoModelBuilder
                 foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
                 {
                     renderer.sharedMaterial = variants[0];
+                }
+            }
+            else if (!string.IsNullOrEmpty(job.MaterialPath))
+            {
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(job.MaterialPath);
+                if (material == null)
+                {
+                    Debug.LogWarning($"[AmmoModelBuilder] Materiale non trovato: {job.MaterialPath}. Restano quelli del modello.");
+                }
+                else
+                {
+                    foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
+                    {
+                        Material[] materials = new Material[renderer.sharedMaterials.Length];
+                        for (int i = 0; i < materials.Length; i++)
+                        {
+                            materials[i] = material;
+                        }
+                        renderer.sharedMaterials = materials;
+                    }
                 }
             }
 

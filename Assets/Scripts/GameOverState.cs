@@ -21,7 +21,9 @@ public static class GameOverState
     }
 
     // Usato solo da un eventuale restart di partita: senza resettarlo, GameOverState
-    // resterebbe attivo anche ricaricando la scena (static, sopravvive al reload).
+    // resterebbe attivo anche ricaricando la scena (static, sopravvive al reload). Lo chiama
+    // anche Unity a ogni avvio del Play, che qui non ricarica il dominio (Enter Play Mode Options).
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Reset()
     {
         IsGameOver = false;

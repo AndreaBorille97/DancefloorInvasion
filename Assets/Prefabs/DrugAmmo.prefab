@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1406995033677486486}
   - component: {fileID: 1163405907421697978}
   - component: {fileID: 7368030352315249848}
+  - component: {fileID: 2564898074386688}
   m_Layer: 0
   m_Name: DrugAmmo
   m_TagString: Untagged
@@ -127,3 +128,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DrugPowerUpPickup
   buffDuration: 20
   lifespan: 10
+--- !u!114 &2564898074386688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4834940496209314104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f79bda23cb00678df6dc0f5b2a1d7f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectStarBurst

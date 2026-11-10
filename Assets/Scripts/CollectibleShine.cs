@@ -20,6 +20,10 @@ using UnityEngine;
 public class CollectibleShine : MonoBehaviour
 {
     [Header("Movimento")]
+    [Tooltip("All'avvio sposta il modello (il figlio \"Modello\") in modo che il suo centro cada sul perno " +
+             "dell'ammo: serve ai modelli importati col perno sul fondo o di lato, che girando " +
+             "ballerebbero. Vedi AmmoModel.Center.")]
+    [SerializeField] private bool centerModel;
     [Tooltip("Di quanto l'oggetto si stacca da terra rispetto a dove nasce. È il centro attorno a cui poi ondeggia.")]
     [SerializeField] private float hoverHeight = 0.45f;
     [Tooltip("Giri su sé stesso, in gradi al secondo: tienilo basso, deve essere una rotazione pigra da vetrina, non una trottola.")]
@@ -36,8 +40,14 @@ public class CollectibleShine : MonoBehaviour
     [SerializeField] private float sparkleRate = 7f;
     [Tooltip("Raggio entro cui nascono le scintille attorno all'oggetto.")]
     [SerializeField] private float sparkleRadius = 0.55f;
+    [Tooltip("Grandezza delle scintille che svolazzano intorno all'oggetto (min, max).")]
+    [SerializeField] private Vector2 sparkleSize = new Vector2(0.1f, 0.22f);
     [Tooltip("Quante stelline sbottano tutte insieme quando l'oggetto viene raccolto.")]
     [SerializeField] private int collectSparkleCount = 18;
+    [Tooltip("Al posto delle stelline, lucine psichedeliche: puntini luminosi sfumati, ognuno di un " +
+             "colore a caso dell'arcobaleno, che pulsano e cambiano colore mentre vivono. Ignora " +
+             "sparkleColor. Usato dall'ammo Hoffman.")]
+    [SerializeField] private bool psychedelicLights;
 
     private Vector3 restPosition; // quota di riposo: il centro dell'ondeggiamento
     private float bobTimer;
@@ -45,13 +55,21 @@ public class CollectibleShine : MonoBehaviour
 
     void Start()
     {
+        if (centerModel)
+        {
+            AmmoModel.Center(AmmoModel.FindHolder(transform));
+        }
+
         // Lo spawner fa nascere le munizioni appena sopra il pavimento: da lì le stacchiamo di
         // hoverHeight, invece di chiedere allo spawner di cambiare quota — così vale per
         // qualunque cosa faccia nascere questo prefab.
         restPosition = transform.position + Vector3.up * hoverHeight;
         transform.position = restPosition;
 
-        CreateAmbientSparkles();
+        if (sparkleRate > 0f)
+        {
+            CreateAmbientSparkles();
+        }
     }
 
     void Update()
@@ -106,7 +124,7 @@ public class CollectibleShine : MonoBehaviour
         main.duration = lifetime;
         main.startLifetime = new ParticleSystem.MinMaxCurve(lifetime * 0.6f, lifetime);
         main.startSpeed = new ParticleSystem.MinMaxCurve(1.8f, 3.2f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.18f, 0.32f);
+        main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.13f);
         main.startColor = sparkleColor;
         main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
         main.gravityModifier = 1.2f; // le stelline schizzano su e ricadono: è quello che dà il "pop"
@@ -122,6 +140,10 @@ public class CollectibleShine : MonoBehaviour
 
         FadeOverLifetime(particles);
         SetUpStarRenderer(burstObject.GetComponent<ParticleSystemRenderer>());
+        if (psychedelicLights)
+        {
+            MakePsychedelic(particles);
+        }
 
         particles.Play();
 
@@ -146,7 +168,7 @@ public class CollectibleShine : MonoBehaviour
         main.duration = 2f;
         main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.2f);
         main.startSpeed = new ParticleSystem.MinMaxCurve(0.1f, 0.35f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.1f, 0.22f);
+        main.startSize = new ParticleSystem.MinMaxCurve(sparkleSize.x, sparkleSize.y);
         main.startColor = sparkleColor;
         main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
         main.simulationSpace = ParticleSystemSimulationSpace.Local;
@@ -165,12 +187,78 @@ public class CollectibleShine : MonoBehaviour
         ParticleSystem.VelocityOverLifetimeModule velocity = particles.velocityOverLifetime;
         velocity.enabled = true;
         velocity.space = ParticleSystemSimulationSpace.Local;
+        // I tre assi devono stare nella stessa modalità (qui due costanti): altrimenti Unity scrive
+        // "Particle Velocity curves must all be in the same mode" a ogni frame e il gioco lagga.
+        velocity.x = new ParticleSystem.MinMaxCurve(0f, 0f);
         velocity.y = new ParticleSystem.MinMaxCurve(0.15f, 0.4f);
+        velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
 
         FadeOverLifetime(particles);
         SetUpStarRenderer(sparkleObject.GetComponent<ParticleSystemRenderer>());
+        if (psychedelicLights)
+        {
+            MakePsychedelic(particles);
+        }
 
         particles.Play();
+    }
+
+    // Trasforma le stelline appena impostate in lucine psichedeliche: sfumate invece che a
+    // stella, un colore a caso dell'arcobaleno ciascuna, che scorre lungo l'arcobaleno mentre
+    // vivono, e un battito di grandezza invece della sola nascita-e-spegnimento.
+    private static void MakePsychedelic(ParticleSystem particles)
+    {
+        ParticleSystem.MainModule main = particles.main;
+        main.startColor = new ParticleSystem.MinMaxGradient(Rainbow(0f, 1f, false)) { mode = ParticleSystemGradientMode.RandomColor };
+        main.startSize = new ParticleSystem.MinMaxCurve(main.startSize.constantMin * 1.3f, main.startSize.constantMax * 1.5f);
+
+        // colorOverLifetime moltiplica il colore di partenza: due arcobaleni sfasati fra cui
+        // ogni lucina ne pesca uno, così non cambiano colore tutte allo stesso modo. Restano
+        // abbastanza chiari da non spegnere il colore di partenza, e tengono la dissolvenza
+        // di FadeOverLifetime.
+        ParticleSystem.ColorOverLifetimeModule color = particles.colorOverLifetime;
+        color.enabled = true;
+        color.color = new ParticleSystem.MinMaxGradient(Rainbow(0f, 0.55f, true), Rainbow(0.5f, 0.55f, true));
+
+        // Pulsano due volte nella loro vita, partendo e finendo piccole.
+        ParticleSystem.SizeOverLifetimeModule size = particles.sizeOverLifetime;
+        size.enabled = true;
+        size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+            new Keyframe(0f, 0.2f),
+            new Keyframe(0.2f, 1f),
+            new Keyframe(0.4f, 0.6f),
+            new Keyframe(0.6f, 1f),
+            new Keyframe(1f, 0.1f)));
+
+        particles.GetComponent<ParticleSystemRenderer>().material.mainTexture = SoftParticleTexture.Get();
+    }
+
+    // Arcobaleno che parte da startHue e lo gira tutto. saturation < 1 schiarisce i colori
+    // (usato per colorOverLifetime, che li moltiplica a quelli di partenza). Con fade le alfa
+    // sono quelle di FadeOverLifetime (nascono e muoiono sfumando), senza sono piene: serve al
+    // colore di partenza, pescato a caso lungo il gradiente.
+    private static Gradient Rainbow(float startHue, float saturation, bool fade)
+    {
+        const int keys = 6; // massimo 8 chiavi di colore in un Gradient
+        GradientColorKey[] colorKeys = new GradientColorKey[keys];
+        for (int i = 0; i < keys; i++)
+        {
+            float t = i / (keys - 1f);
+            colorKeys[i] = new GradientColorKey(Color.HSVToRGB(Mathf.Repeat(startHue + t, 1f), saturation, 1f), t);
+        }
+
+        return new Gradient
+        {
+            colorKeys = colorKeys,
+            alphaKeys = fade
+                ? new[]
+                {
+                    new GradientAlphaKey(0f, 0f),
+                    new GradientAlphaKey(1f, 0.25f),
+                    new GradientAlphaKey(0f, 1f),
+                }
+                : new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) },
+        };
     }
 
     // Nascono e muoiono sfumando invece di apparire e sparire di colpo: è quello che le fa

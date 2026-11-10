@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 5412783301947720003}
   - component: {fileID: 5412783301947720004}
   - component: {fileID: 5412783301947720005}
+  - component: {fileID: 2645056127533388}
+  - component: {fileID: 3558180315073970786}
   m_Layer: 0
   m_Name: HoffmanAmmo
   m_TagString: Untagged
@@ -87,9 +89,10 @@ MonoBehaviour:
   bobHeight: 0.18
   bobPeriod: 2.4
   sparkleColor: {r: 1, g: 0.95, b: 0.6, a: 1}
-  sparkleRate: 7
+  sparkleRate: 0
   sparkleRadius: 0.55
   collectSparkleCount: 18
+  psychedelicLights: 1
 --- !u!1 &7253618316817958526
 GameObject:
   m_ObjectHideFlags: 0
@@ -181,3 +184,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2645056127533388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5412783301947720001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f79bda23cb00678df6dc0f5b2a1d7f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectStarBurst
+--- !u!114 &3558180315073970786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5412783301947720001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c23900c143c4744b9bb3b5aaf38c9b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoBubbles
+  bubbleColor: {r: 0.7, g: 0.1, b: 1, a: 0.6}
+  rate: 14
+  radius: 0.45
+  size: {x: 0.3, y: 0.6}
+  lifetime: {x: 1.8, y: 3}
+  riseSpeed: 0.15
+  orbitSpeed: 0.5
+  wobbleStrength: 0.2

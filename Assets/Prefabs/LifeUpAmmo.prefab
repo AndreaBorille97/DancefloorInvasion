@@ -8,11 +8,12 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7355075638183636355}
-  - component: {fileID: 4846329653140162800}
-  - component: {fileID: 750321799281403336}
-  - component: {fileID: 3932044344811452501}
-  - component: {fileID: 2088783742618211355}
+  - component: {fileID: 4300909543656911715}
+  - component: {fileID: 1083817610391018588}
+  - component: {fileID: 1769667829491697308}
+  - component: {fileID: 7663314837036041645}
+  - component: {fileID: 693548445504588}
+  - component: {fileID: 5102207426253250331}
   m_Layer: 0
   m_Name: LifeUpAmmo
   m_TagString: Untagged
@@ -20,7 +21,7 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7355075638183636355
+--- !u!4 &4300909543656911715
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -32,24 +33,152 @@ Transform:
   m_LocalPosition: {x: 1.04524, y: 1.58, z: -9.60775}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 3517376776638433263}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4846329653140162800
+--- !u!135 &1083817610391018588
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098733803756957186}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.65
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1769667829491697308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098733803756957186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bf76a52fe73c2c43b68c1881d05752e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LifeUpPowerUpAmmoPickup
+  lifespan: 10
+--- !u!114 &7663314837036041645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098733803756957186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a03e27f94a5519745a0eb81ab834688f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectibleShine
+  centerModel: 0
+  hoverHeight: 0.45
+  spinSpeed: 45
+  bobHeight: 0.18
+  bobPeriod: 2.4
+  sparkleColor: {r: 0.45, g: 1, b: 0.5, a: 1}
+  sparkleRate: 0
+  sparkleRadius: 0.55
+  sparkleSize: {x: 0.1, y: 0.22}
+  collectSparkleCount: 18
+  psychedelicLights: 0
+--- !u!114 &693548445504588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098733803756957186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f79bda23cb00678df6dc0f5b2a1d7f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectStarBurst
+  starColor: {r: 1.4, g: 1.15, b: 0.15, a: 1}
+  bigStars: 12
+  smallStars: 24
+  bigStarSize: {x: 0.14, y: 0.24}
+  smallStarSize: {x: 0.05, y: 0.1}
+--- !u!114 &5102207426253250331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4098733803756957186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c23900c143c4744b9bb3b5aaf38c9b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoBubbles
+  bubbleColor: {r: 0.45, g: 1, b: 0.5, a: 0.22}
+  rate: 7
+  radius: 0.45
+  size: {x: 0.3, y: 0.6}
+  lifetime: {x: 1.8, y: 3}
+  riseSpeed: 0.15
+  orbitSpeed: 0.5
+  wobbleStrength: 0.2
+--- !u!1 &4295285220116946261
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3517376776638433263}
+  - component: {fileID: 540396906852976714}
+  - component: {fileID: 2349497290024156288}
+  m_Layer: 0
+  m_Name: Modello
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3517376776638433263
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4295285220116946261}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.0030369759, y: -0.0010125637, z: 0.015524864}
+  m_LocalScale: {x: 138.23477, y: 138.23477, z: 138.23477}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4300909543656911715}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &540396906852976714
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4098733803756957186}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &750321799281403336
+  m_GameObject: {fileID: 4295285220116946261}
+  m_Mesh: {fileID: -8524547844719368960, guid: a6ceed71a298692448866ce45675f0bf, type: 3}
+--- !u!23 &2349497290024156288
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4098733803756957186}
+  m_GameObject: {fileID: 4295285220116946261}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -68,7 +197,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 97f8fbd8c5e1fa54385e8b672a3878f2, type: 2}
+  - {fileID: 2100000, guid: 6a84b2d8cb45428468764c6230f8823f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,37 +221,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!135 &3932044344811452501
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4098733803756957186}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &2088783742618211355
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4098733803756957186}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1bf76a52fe73c2c43b68c1881d05752e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LifeUpPowerUpAmmoPickup
-  lifespan: 10

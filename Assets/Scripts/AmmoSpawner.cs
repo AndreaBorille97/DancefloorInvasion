@@ -6,7 +6,7 @@ using UnityEngine;
 // sopra il pavimento (i confini della mappa sono letti dai bounds del Renderer di "floor").
 //
 // Non sa niente della munizione che fa nascere: è lo stesso componente per le scatole di
-// stamina (SpeedUpPowerUpAmmo) e per le ammo Hoffman (HoffmanAmmo, il buco nero), basta un
+// scatto (SpeedUpPowerUpAmmo) e per le ammo Hoffman (HoffmanAmmo, il buco nero), basta un
 // GameObject spawner per ciascuna con il suo prefab. Prima si chiamava
 // SpeedUpPowerUpAmmoSpawner: il file è stato rinominato tenendo lo stesso GUID, quindi lo
 // spawner già in scena è diventato questo senza perdere i valori.
@@ -29,6 +29,12 @@ public class AmmoSpawner : MonoBehaviour
 
     void Update()
     {
+        // I power-up cominciano a nascere solo quando il Player è atterrato (DifficultyMenu).
+        if (!DifficultyMenu.PlayerLanded)
+        {
+            return;
+        }
+
         timer += Time.deltaTime;
         if (timer < nextSpawnDelay)
         {

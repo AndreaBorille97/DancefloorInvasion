@@ -1,32 +1,31 @@
 using UnityEngine;
 
-// Creato da RobosbirroHealth.Die() su un GameObject a parte (non sul Robosbirro stesso,
-// che viene distrutto subito): il suo compito è aspettare che l'ultimo Sbirro rimasto in
-// scena sparisca (nessun EnemyHealth trovato) prima di mettere in pausa il gioco e
-// mostrare il pannello di vittoria, dato che nel frattempo gli Sbirro scappano invece di
-// attaccare (vedi RoutState) e Raver/Player continuano a poterli eliminare.
+// Creato da FinalVictory quando sono morti il boss e tutti gli IdroSbirro, su un GameObject a
+// parte (chi è morto per ultimo viene distrutto subito): victoryDelay secondi dopo dà la vittoria
+// (WinState, pausa e pannello di WinUI). Nel frattempo gli Sbirro rimasti tornano agli spawner
+// invece di attaccare (vedi RoutState) e Raver/Player continuano a poterli eliminare: chi è
+// ancora in giro allo scadere resta lì, la vittoria non lo aspetta.
 public class BossDefeatedSequence : MonoBehaviour
 {
-    private GameObject victoryPanel;
+    private const float victoryDelay = 10f;
 
-    public void Init(GameObject victoryPanel)
+    private float waited;
+
+    void Start()
     {
-        this.victoryPanel = victoryPanel;
+        Debug.Log($"[BossDefeatedSequence] Boss e IdroSbirro abbattuti: vittoria fra {victoryDelay:0} s.");
     }
 
     void Update()
     {
-        if (FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None).Length > 0)
+        waited += Time.deltaTime;
+        if (waited < victoryDelay)
         {
             return;
         }
 
-        Time.timeScale = 0f;
-        if (victoryPanel != null)
-        {
-            victoryPanel.SetActive(true);
-        }
-
+        Debug.Log("[BossDefeatedSequence] Vittoria.");
+        WinState.Trigger();
         Destroy(gameObject);
     }
 }

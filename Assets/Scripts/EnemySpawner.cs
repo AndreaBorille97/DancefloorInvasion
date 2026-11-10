@@ -2,9 +2,8 @@ using UnityEngine;
 
 // Da associare a un GameObject "spawner" in scena: ogni tot secondi
 // istanzia un nemico in una posizione casuale attorno allo spawner,
-// evitando di sovrapporlo a nemici già presenti. Il boss (Robosbirro) ha
-// un suo spawner dedicato, vedi RobosbirroSpawner: qui, se in scena ci
-// fossero più EnemySpawner, ognuno finirebbe per spawnarne uno proprio.
+// evitando di sovrapporlo a nemici già presenti. Dopo idroSbirroDelay genera
+// anche il suo IdroSbirro, una volta sola.
 public class EnemySpawner : MonoBehaviour
 {
     [System.Serializable]
@@ -24,6 +23,10 @@ public class EnemySpawner : MonoBehaviour
     [Tooltip("Di quanto si accorcia l'intervallo di spawn per ogni secondo di gioco trascorso: valori più alti fanno aumentare la velocità di spawn più in fretta.")]
     [SerializeField] private float intervalDecreasePerSecond = 0.004f;
     [SerializeField] private float minSpawnInterval = 0.3f; // intervallo minimo, sotto il quale non si scende anche a tempo infinito
+    [Tooltip("Moltiplica l'intervallo di spawn in ogni momento della partita, minimo compreso: 2 = metà degli Sbirro, 1 = come da valori sopra.")]
+    [SerializeField] private float spawnIntervalMultiplier = 2f;
+    [Tooltip("Quanti Sbirro in meno mentre CyberGiorgia è in campo (dal segno rosso alla sua morte): 0.3 = il 30% in meno.")]
+    [Range(0f, 0.9f)] [SerializeField] private float bossSpawnReduction = 0.3f;
 
     [Header("Posizionamento")]
     [SerializeField] private float spawnRadius = 3f;      // raggio entro cui scegliere una posizione casuale attorno allo spawner
@@ -38,26 +41,58 @@ public class EnemySpawner : MonoBehaviour
     [Tooltip("Se assegnato, ogni nemico generato segue questo percorso (vedi EnemyPath) dallo spawn fino all'ultimo waypoint, ignorando bersagli e aggro, poi passa all'AI normale. Pensato per spawner piazzati fuori dall'arena, così i nemici fanno un giro prestabilito ed entrano da dove vuoi tu invece che dal punto più vicino.")]
     [SerializeField] private EnemyPath path;
 
+    [Header("Arrivo del Player")]
+    [Tooltip("Appena il Player atterra (DifficultyMenu.PlayerLanded) nasce uno Sbirro a questi metri fuori dal bordo dell'arena, sulla linea fra lo spawner e il centro: quando si comincia a giocare ce n'è già uno che sta per entrare. 0 = niente.")]
+    [SerializeField] private float landingSpawnOutside = 4f;
+
+    [Header("IdroSbirro")]
+    [Tooltip("Generato una volta sola, dopo idroSbirroDelay: segue il percorso qui sopra e va alla sua postazione (vedi IdroSbirro). Vuoto = nessun IdroSbirro da questo spawner.")]
+    [SerializeField] private GameObject idroSbirroPrefab;
+    [Tooltip("Secondi di gioco dopo cui arriva l'IdroSbirro.")]
+    [SerializeField] private float idroSbirroDelay = 240f;
+    [Tooltip("Solo per le prove: lo spawner genera subito l'IdroSbirro e nessun altro Sbirro.")]
+    [SerializeField] private bool onlyIdroSbirro = false;
+
+    // Usato da FinalVictory per sapere quanti IdroSbirro vanno abbattuti per vincere.
+    public bool SpawnsIdroSbirro => idroSbirroPrefab != null && isActiveAndEnabled;
+
     private float timer;
     private float elapsedTime; // tempo totale trascorso dall'avvio, usato per accorciare l'intervallo di spawn
+    private bool idroSbirroSpawned;
+    private bool sawLandingWait;
+    private bool landingSpawnDone;
 
-    // Mentre il Robosbirro è in scena, la difficoltà resta congelata al 15% del tempo
-    // impiegato a comparire (es. entra dopo 5 min: l'intervallo resta quello che si aveva a
-    // 45 secondi, invece di continuare ad accorciarsi).
-    private bool robosbirroWasPresent;
-    private float difficultyFreezeElapsedTime;
+    void Start()
+    {
+        if (onlyIdroSbirro)
+        {
+            SpawnIdroSbirro();
+        }
+
+        // Il primo Sbirro nasce al primo Update, senza aspettare un intervallo intero: dallo spawner
+        // all'arena c'è già tanta strada. Col menu della modalità aperto (timeScale 0) resta fermo
+        // allo spawner e parte appena si sceglie.
+        timer = float.MaxValue;
+    }
 
     void Update()
     {
-        // Il boss è morto: fine degli spawn per questa partita (vedi RoutState, attivato da
-        // RobosbirroHealth.Die()), gli Sbirro rimasti scappano invece di essere rimpiazzati.
-        if (RoutState.IsActive)
+        // Partita finita (boss e IdroSbirro abbattuti, vedi RoutState): fine degli spawn, gli
+        // Sbirro rimasti tornano allo spawner invece di essere rimpiazzati.
+        if (RoutState.IsActive || onlyIdroSbirro)
         {
             return;
         }
 
+        UpdateLandingSpawn();
+
         elapsedTime += Time.deltaTime;
         timer += Time.deltaTime;
+
+        if (elapsedTime >= idroSbirroDelay)
+        {
+            SpawnIdroSbirro();
+        }
 
         if (timer < GetCurrentSpawnInterval())
         {
@@ -70,26 +105,87 @@ public class EnemySpawner : MonoBehaviour
 
     private float GetCurrentSpawnInterval()
     {
-        float difficultyElapsedTime = elapsedTime;
-
-        bool robosbirroPresent = FindAnyObjectByType<RobosbirroHealth>() != null;
-        if (robosbirroPresent)
-        {
-            if (!robosbirroWasPresent)
-            {
-                // Primo frame col Robosbirro in scena: congela la difficoltà al 15% del
-                // tempo di gioco trascorso finora (se entra dopo 5 min, resta come a 45 secondi).
-                difficultyFreezeElapsedTime = elapsedTime * 0.15f;
-            }
-
-            difficultyElapsedTime = difficultyFreezeElapsedTime;
-        }
-
-        robosbirroWasPresent = robosbirroPresent;
-
         // L'intervallo si accorcia in modo lineare col tempo di gioco (spawn sempre più frequenti),
         // ma non scende mai sotto minSpawnInterval.
-        return Mathf.Max(minSpawnInterval, spawnInterval - difficultyElapsedTime * intervalDecreasePerSecond);
+        float interval = spawnIntervalMultiplier * Mathf.Max(minSpawnInterval, spawnInterval - elapsedTime * intervalDecreasePerSecond);
+        // Il 30% di Sbirro in meno = intervallo diviso 0.7 (non moltiplicato 1.3, che ne toglierebbe il 23%).
+        return CyberGiorgiaBoss.IsPresent ? interval / (1f - bossSpawnReduction) : interval;
+    }
+
+    // Quelli nati allo spawner sono ancora per strada quando il Player atterra (spawner a ~60 m,
+    // passo 3 m/s): uno in più, già sul bordo, perché la partita cominci con qualcuno in arrivo.
+    // Niente percorso: è già oltre il giro, e con un percorso tornerebbe indietro al primo waypoint.
+    private void UpdateLandingSpawn()
+    {
+        if (landingSpawnDone)
+        {
+            return;
+        }
+
+        // PlayerLanded è vero anche senza menu della modalità: conta solo il passaggio da falso a vero.
+        if (!DifficultyMenu.PlayerLanded)
+        {
+            sawLandingWait = true;
+            return;
+        }
+
+        landingSpawnDone = true;
+        if (!sawLandingWait || landingSpawnOutside <= 0f)
+        {
+            return;
+        }
+
+        GameObject enemyPrefab = GetRandomEnemyPrefab();
+        if (enemyPrefab == null || !TryGetArenaEdgePoint(out Vector3 position, out Vector3 inward))
+        {
+            return;
+        }
+
+        Instantiate(enemyPrefab, position, Quaternion.LookRotation(inward));
+    }
+
+    // Il punto landingSpawnOutside metri fuori dal bordo dell'arena (FloorBounds), sulla linea
+    // fra lo spawner e il centro. Falso se lo spawner sta già dentro l'arena.
+    private bool TryGetArenaEdgePoint(out Vector3 position, out Vector3 inward)
+    {
+        position = Vector3.zero;
+        inward = Vector3.forward;
+        if (FloorBounds.Instance == null)
+        {
+            return false;
+        }
+
+        Bounds arena = FloorBounds.Instance.Bounds;
+        Vector3 outward = transform.position - arena.center;
+        outward.y = 0f;
+        float tx = Mathf.Abs(outward.x) > 0.001f ? arena.extents.x / Mathf.Abs(outward.x) : float.PositiveInfinity;
+        float tz = Mathf.Abs(outward.z) > 0.001f ? arena.extents.z / Mathf.Abs(outward.z) : float.PositiveInfinity;
+        float t = Mathf.Min(tx, tz);
+        if (t >= 1f)
+        {
+            return false;
+        }
+
+        Vector3 edge = arena.center + outward * t;
+        position = edge + outward.normalized * landingSpawnOutside;
+        position.y = transform.position.y + spawnHeight;
+        inward = -outward.normalized;
+        return true;
+    }
+
+    private void SpawnIdroSbirro()
+    {
+        if (idroSbirroSpawned || idroSbirroPrefab == null)
+        {
+            return;
+        }
+
+        idroSbirroSpawned = true;
+        GameObject idroSbirro = Instantiate(idroSbirroPrefab, transform.position, transform.rotation);
+        if (path != null && idroSbirro.TryGetComponent(out IdroSbirro truck))
+        {
+            truck.SetRoute(path.GetWorldPoints());
+        }
     }
 
     private void SpawnEnemy()

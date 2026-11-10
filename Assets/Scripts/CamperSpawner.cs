@@ -23,6 +23,12 @@ public class CamperSpawner : MonoBehaviour
 
     void Update()
     {
+        // I power-up cominciano a nascere solo quando il Player è atterrato (DifficultyMenu).
+        if (!DifficultyMenu.PlayerLanded)
+        {
+            return;
+        }
+
         timer += Time.deltaTime;
         if (timer < nextSpawnDelay)
         {

@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2.85306, y: 2.3, z: -4.51309}
-  m_LocalScale: {x: 0.8158062, y: 0.8158062, z: 0.8158062}
+  m_LocalScale: {x: 0.652645, y: 0.652645, z: 0.652645}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7938557949221963546}
@@ -165,7 +165,6 @@ MonoBehaviour:
   playerAggroRadius: 16
   objectiveApproachSpread: 10
   consoleSharePerFive: 2
-  routDirectionChangeInterval: 1.5
   snapToFloorOnSpawn: 0
   floorSnapYOffset: 0
 --- !u!114 &8391027465182736453
@@ -180,7 +179,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d80720f36ccb9b418952e784dc4f0e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
-  maxHealth: 225
+  maxHealth: 175.5
   camperDamagePercent: 1
   deathDustParticleCount: 60
   deathDustColor: {r: 0.6, g: 0.05, b: 0.05, a: 1}

@@ -24,6 +24,7 @@ public class LifeUpPowerUpAmmoPickup : MonoBehaviour
         }
 
         playerHealth.AddLife(1);
+        PlayerMolecules.Show(PlayerMolecules.Molecola.Thc);
         Destroy(gameObject);
     }
 }

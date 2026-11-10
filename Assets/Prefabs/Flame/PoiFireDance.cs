@@ -49,6 +49,23 @@ public class PoiFireDance : MonoBehaviour
     public Transform headLeft;
     public Transform headRight;
 
+    [Header("Aggancio al personaggio (opzionale)")]
+    [Tooltip("Se assegnate, il cerchio di ogni testa è centrato sulla mano, che si muove con " +
+             "l'animazione del personaggio, invece che sui punti fissi del rig. Le assegna da sé " +
+             "RaverJuggler, cercando le ossa LeftHand/RightHand del modello.")]
+    public Transform handLeft;
+    public Transform handRight;
+
+    [Tooltip("Solo con le mani assegnate: di quanto il centro di ogni cerchio sta fuori dalla " +
+             "mano, in metri, col verso del personaggio. X verso l'esterno (specchiata per il " +
+             "lato destro), Y in su, Z in avanti. Allarga i fuochi, che centrati proprio sulla " +
+             "mano passano troppo vicini al corpo.")]
+    public Vector3 handSpread = new Vector3(0.35f, 0f, 0.15f);
+
+    [Tooltip("Quanto in fretta (1/secondi) la rotazione si riallinea al tempo del ballo quando è " +
+             "sincronizzata (vedi SyncToLoop).")]
+    public float syncStrength = 4f;
+
     [Header("Debug")]
     public bool drawGizmos = true;
 
@@ -93,11 +110,48 @@ public class PoiFireDance : MonoBehaviour
 
     public float CurrentSpeed { get { return spinSpeed * speedMultiplier; } }
 
+    // Verso del personaggio (vedi SetFacing): se non arriva, vale quello di questo Transform.
+    bool hasFacing;
+    Quaternion facing = Quaternion.identity;
+
+    // Tempo del ballo (vedi SyncToLoop), valido solo per il fotogramma in cui arriva.
+    bool syncedThisFrame;
+    float syncLoops;      // giri del ballo fatti finora, parte frazionaria compresa
+    float syncLoopLength; // secondi di un giro del ballo
+
     /// <summary>Interrompe la danza: le teste scendono dolcemente a terra e il moto si ferma.</summary>
     public void Lower() { performing = false; }
 
     /// <summary>Riprende la danza: le teste risalgono e il moto riparte da dove si era fermato.</summary>
     public void Resume() { performing = true; }
+
+    /// <summary>
+    /// Davanti del personaggio, in coordinate mondo: i piani dei cerchi si orientano su questo
+    /// invece che su questo Transform (il modello animato può essere girato diversamente dal
+    /// GameObject che lo porta).
+    /// </summary>
+    public void SetFacing(Vector3 forward)
+    {
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-6f) return;
+        facing = Quaternion.LookRotation(forward.normalized, Vector3.up);
+        hasFacing = true;
+    }
+
+    /// <summary>
+    /// Da chiamare ogni fotogramma mentre il personaggio balla: loops = giri della clip fatti
+    /// finora (normalizedTime dell'Animator), loopLength = secondi di un giro. La rotazione
+    /// prende un numero intero di cicli completi di piani per ogni giro del ballo, il più
+    /// vicino a spinSpeed, e si aggancia alla sua fase: così ogni giro del ballo le fiamme
+    /// ripassano negli stessi punti negli stessi istanti.
+    /// </summary>
+    public void SyncToLoop(float loops, float loopLength)
+    {
+        if (loopLength <= 0.0001f) return;
+        syncedThisFrame = true;
+        syncLoops = loops;
+        syncLoopLength = loopLength;
+    }
 
     /// <summary>Angolo corrente in giri — utile per sincronizzare audio o VFX.</summary>
     public float Revolutions { get { return ang / (Mathf.PI * 2f); } }
@@ -107,21 +161,55 @@ public class PoiFireDance : MonoBehaviour
         if (headLeft == null || headRight == null) CreateHeads();
     }
 
-    void Update()
+    // In LateUpdate e non in Update: le mani (handLeft/handRight) sono già nella posa di questo
+    // fotogramma solo dopo che l'Animator ha valutato l'animazione, altrimenti le fiamme
+    // andrebbero dietro alle mani con un fotogramma di ritardo.
+    void LateUpdate()
     {
         performT = lowerDuration > 0f
-            ? Mathf.MoveTowards(performT, performing ? 1f : 0f, Time.deltaTime / lowerDuration)
+            ? Mathf.MoveTowards(performT, performing ? 1f : 0f, StageClock.DeltaTime / lowerDuration)
             : (performing ? 1f : 0f);
 
         // Il moto rallenta insieme alla discesa e a terra è fermo del tutto: senza questo
         // fattore le teste continuerebbero a girare appoggiate al suolo.
-        ang += Time.deltaTime * CurrentSpeed * performT * Mathf.PI * 2f;
+        if (syncedThisFrame)
+        {
+            // Cicli di piani per giro del ballo: interi, così il giro dopo ricomincia uguale.
+            float cycles = Mathf.Max(1f, Mathf.Round(CurrentSpeed * syncLoopLength / CYCLE_REVS));
+            float revsPerLoop = cycles * CYCLE_REVS;
+            ang += StageClock.DeltaTime * (revsPerLoop / syncLoopLength) * performT * Mathf.PI * 2f;
+
+            // Riallineamento morbido alla fase del ballo, sull'intero ciclo di piani.
+            float period = CYCLE_REVS * Mathf.PI * 2f;
+            float wanted = syncLoops * revsPerLoop * Mathf.PI * 2f;
+            float error = Mod(wanted - ang + period * 0.5f, period) - period * 0.5f;
+            ang += error * Mathf.Clamp01(StageClock.DeltaTime * syncStrength) * performT;
+            syncedThisFrame = false;
+        }
+        else
+        {
+            ang += StageClock.DeltaTime * CurrentSpeed * performT * Mathf.PI * 2f;
+        }
 
         int i, j; float k;
         Sequence(out i, out j, out k);
 
-        Apply(-1, ref frameL, headLeft, i, j, k);
-        Apply(+1, ref frameR, headRight, i, j, k);
+        Apply(-1, ref frameL, headLeft, handLeft, i, j, k);
+        Apply(+1, ref frameR, headRight, handRight, i, j, k);
+    }
+
+    // Da coordinate del rig (Y a terra, +Z davanti) a mondo: come TransformPoint, ma girato
+    // sul verso del personaggio se è arrivato (SetFacing).
+    Vector3 RigToWorld(Vector3 local)
+    {
+        Quaternion rotation = hasFacing ? facing : transform.rotation;
+        return transform.position + rotation * Vector3.Scale(local, transform.lossyScale);
+    }
+
+    Vector3 RigToWorldDirection(Vector3 local)
+    {
+        Quaternion rotation = hasFacing ? facing : transform.rotation;
+        return rotation * Vector3.Scale(local, transform.lossyScale);
     }
 
     // Fase continua, velocità costante: nessuna tenuta, nessun fermo-riparte.
@@ -134,7 +222,7 @@ public class PoiFireDance : MonoBehaviour
         k = s - Mathf.Floor(s);
     }
 
-    void Apply(int side, ref Frame f, Transform head, int i, int j, float k)
+    void Apply(int side, ref Frame f, Transform head, Transform hand, int i, int j, float k)
     {
         if (head == null) return;
 
@@ -144,24 +232,27 @@ public class PoiFireDance : MonoBehaviour
         // 2. trasporto parallelo del frame: la testa non salta mai
         Transport(ref f, target);
 
-        // 3. pivot su spline chiusa (Catmull-Rom periodica): niente gomiti
-        Vector3 pivot = CatmullPivot(side, i, k) * rigScale;
-
         // 4. contro-rotazione: le due teste girano SEMPRE in verso opposto
         float a = (side > 0) ? Mathf.PI - ang : ang;
         float R = chainRadius * rigScale;
-        Vector3 local = pivot + (Mathf.Cos(a) * f.u + Mathf.Sin(a) * f.v) * R;
+        Vector3 offset = (Mathf.Cos(a) * f.u + Mathf.Sin(a) * f.v) * R;
+
+        // 3. centro del cerchio: la mano del personaggio se c'è, altrimenti il pivot su spline
+        // chiusa (Catmull-Rom periodica), niente gomiti
+        Vector3 world = hand != null
+            ? hand.position + RigToWorldDirection(new Vector3(handSpread.x * side, handSpread.y, handSpread.z) + offset)
+            : RigToWorld(CatmullPivot(side, i, k) * rigScale + offset);
 
         // 5. discesa a terra quando la danza è interrotta (vedi Lower/Resume). SmoothStep e non
         // una Lerp lineare: così la testa parte e arriva morbida, senza lo scatto secco che si
         // vedrebbe ai due estremi del movimento.
         if (performT < 1f)
         {
-            Vector3 rest = new Vector3(restPosition.x * side, restPosition.y, restPosition.z) * rigScale;
-            local = Vector3.Lerp(rest, local, Mathf.SmoothStep(0f, 1f, performT));
+            Vector3 rest = RigToWorld(new Vector3(restPosition.x * side, restPosition.y, restPosition.z) * rigScale);
+            world = Vector3.Lerp(rest, world, Mathf.SmoothStep(0f, 1f, performT));
         }
 
-        head.position = transform.TransformPoint(local);
+        head.position = world;
     }
 
     static void Transport(ref Frame f, Vector3 target)

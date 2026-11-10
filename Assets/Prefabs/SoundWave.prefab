@@ -55,7 +55,7 @@ MonoBehaviour:
   healAmount: 5
   waveColor: {r: 0.4, g: 0.9, b: 1, a: 0.35}
   visualYOffset: 0.4
-  customVisualPrefab: {fileID: 3930084860605553824, guid: 9d55ebecf2b0a36478ea299c13a745b3, type: 3}
+  customVisualPrefab: {fileID: 0}
   alsoShowFlatWave: 0
   customVisualEulerAngles: {x: 90, y: 0, z: 0}
   customVisualScaleMultiplier: 0.4
@@ -63,3 +63,6 @@ MonoBehaviour:
   customVisualForwardFollow: 0.5
   customVisualForwardOffset: 1
   customVisualFadeOut: 1
+  ringVisualPrefab: {fileID: 1105, guid: e7b5a6f8c9d00b1c2d3e4f5061728394, type: 3}
+  berserkRingPrefab: {fileID: 1105, guid: f8c6b7a9d0e11c2d3e4f506172839405, type: 3}
+  serotoninRingPrefab: {fileID: 1105, guid: 236dbbd550b29034595f3232cd3312c0, type: 3}

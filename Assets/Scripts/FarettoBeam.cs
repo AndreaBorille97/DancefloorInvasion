@@ -188,6 +188,8 @@ public class FarettoBeam : MonoBehaviour
 
     private Material CreateBeamMaterial()
     {
+        // In build lo shader, con la variante trasparente, c'è solo grazie ad
+        // Assets/Resources/UnlitTrasparenteIncluso.mat: senza un materiale che lo usa Unity lo esclude.
         Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
         if (shader == null)
         {

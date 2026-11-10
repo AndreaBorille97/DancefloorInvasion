@@ -121,7 +121,6 @@ public class EnemyNavMesh : MonoBehaviour
             || collider.GetComponentInParent<PlayerHealth>() != null
             || collider.GetComponentInParent<RaverHealth>() != null
             || collider.GetComponentInParent<EnemyHealth>() != null
-            || collider.GetComponentInParent<RobosbirroHealth>() != null
             || collider.GetComponentInParent<CamperVehicle>() != null
             || collider.GetComponentInParent<ArenaBounds>() != null
             || collider.GetComponentInParent<FloorBounds>() != null)

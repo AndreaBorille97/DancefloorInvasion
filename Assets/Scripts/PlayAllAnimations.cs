@@ -27,6 +27,9 @@ public class PlayAllAnimations : MonoBehaviour
              "0.5 = meta' velocita', 2 = doppia.")]
     [SerializeField] private float moltiplicatoreVelocita = 0.6f;
 
+    private readonly List<AnimationState> states = new List<AnimationState>();
+    private Animation legacyAnimation;
+
     private void Start()
     {
         var anim = GetComponent<Animation>();
@@ -63,6 +66,24 @@ public class PlayAllAnimations : MonoBehaviour
             state.weight = 1f;
             state.time = desincronizza ? Random.Range(0f, state.length) : 0f;
             state.enabled = true;
+            states.Add(state);
         }
+        legacyAnimation = anim;
+    }
+
+    // Col gioco in pausa per il menu della modalità l'Animation non avanza da sola: le clip si
+    // portano avanti a mano in tempo reale (vedi StageClock).
+    private void Update()
+    {
+        if (!DifficultyMenu.IsOpen || legacyAnimation == null)
+        {
+            return;
+        }
+
+        foreach (AnimationState state in states)
+        {
+            state.time += Time.unscaledDeltaTime * state.speed;
+        }
+        legacyAnimation.Sample();
     }
 }

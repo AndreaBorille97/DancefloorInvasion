@@ -8,7 +8,7 @@ using UnityEngine;
 // SetForcedPosition, stesso meccanismo usato da RaverHealth per la ChilloutZone) e
 // smette di attaccare finché non arriva. Appena è a destinazione (hasArrived) comincia ad
 // attirare verso di sé gli Sbirro che gli si avvicinano entro attractionRadius (vedi
-// FindNearestAttractor, letto da EnemyChase/EnemyRangedAttack/IdroSbirroHoseAttack al posto
+// FindNearestAttractor, letto da EnemyChase/EnemyRangedAttack/IdroSbirro al posto
 // del loro bersaglio normale) e a "fare il giocoliere" (isPerforming): finché dura, aumenta
 // leggermente vita e danno di tutti i Raver in scena in quel momento (stesso schema di
 // RaverDrugBuff). Ce ne può essere solo uno alla volta in tutta la scena (vedi AnyJuggling,
@@ -123,11 +123,23 @@ public class RaverJuggler : MonoBehaviour
     // del Raver e viene agganciato da solo, niente da collegare nell'Inspector. Resta null se
     // non c'è, e in quel caso il giocoliere si comporta esattamente come prima, senza fiamme.
     private PoiFireDance poiFire;
+    private bool menuHidden; // vedi SetMenuHidden
+    private RaverAnimation raverAnimation; // null se il Raver non ha un modello animato
 
     // Usato da CamperVehicle per non mandare il giocoliere a pilotare il Camper.
     public bool IsJuggling => isJuggling;
 
-    // Usato da EnemyChase/EnemyRangedAttack/IdroSbirroHoseAttack: il Transform del
+    // true per il Raver che fa il giocoliere, anche mentre è a terra o sta tornando al suo posto
+    // (a differenza di IsJuggling): ha un posto suo, non presidia un obiettivo. Usato da
+    // EnemyChase.GetGuardsFor per non contarlo fra le guardie.
+    public bool IsJuggler => hasHome;
+
+    // Usati da RaverAnimation: sul posto (dall'arrivo fino a quando va a terra) e, lì, fermo coi
+    // poi a terra perché qualcuno è entro dangerRadius (vedi PauseForDanger).
+    public bool IsOnSpot => hasArrived;
+    public bool IsPausedForDanger => isPausedForDanger;
+
+    // Usato da EnemyChase/EnemyRangedAttack/IdroSbirro: il Transform del
     // giocoliere più vicino a fromPosition tra quelli che stanno attualmente attirando
     // (hasArrived, pausa per pericolo compresa) e hanno fromPosition entro il proprio
     // attractionRadius, altrimenti null.
@@ -169,6 +181,48 @@ public class RaverJuggler : MonoBehaviour
         if (poiFire != null)
         {
             poiFire.gameObject.SetActive(false);
+            AttachPoiToModel();
+        }
+    }
+
+    // Se il Raver ha un modello animato, i poi girano attorno alle sue mani, col suo verso e a
+    // tempo col suo ballo (vedi Update), invece che attorno a punti fissi: altrimenti il fuoco
+    // va per conto suo mentre il modello balla.
+    private void AttachPoiToModel()
+    {
+        raverAnimation = GetComponent<RaverAnimation>();
+        Animator animator = GetComponentInChildren<Animator>();
+        if (animator == null)
+        {
+            return;
+        }
+
+        foreach (Transform bone in animator.GetComponentsInChildren<Transform>())
+        {
+            if (bone.name == "LeftHand")
+            {
+                poiFire.handLeft = bone;
+            }
+            else if (bone.name == "RightHand")
+            {
+                poiFire.handRight = bone;
+            }
+        }
+    }
+
+    // Verso e tempo del modello passati ai poi, ogni fotogramma: PoiFireDance li usa nel suo
+    // LateUpdate, quindi sempre dopo questo.
+    private void SyncPoiToModel()
+    {
+        if (poiFire == null || raverAnimation == null || !raverAnimation.enabled)
+        {
+            return;
+        }
+
+        poiFire.SetFacing(raverAnimation.ModelForward);
+        if (raverAnimation.TryGetDanceLoop(out float loops, out float loopLength))
+        {
+            poiFire.SyncToLoop(loops, loopLength);
         }
     }
 
@@ -199,6 +253,8 @@ public class RaverJuggler : MonoBehaviour
 
     void Update()
     {
+        SyncPoiToModel();
+
         if (!isJuggling)
         {
             return;
@@ -280,7 +336,7 @@ public class RaverJuggler : MonoBehaviour
     // un fuoco. Perlin dà una curva continua, quindi il respiro resta morbido.
     private void UpdateFireFlicker()
     {
-        float noise = Mathf.PerlinNoise(Time.time * fireFlickerSpeed, flickerSeed);
+        float noise = Mathf.PerlinNoise(StageClock.Time * fireFlickerSpeed, flickerSeed);
         fireLight.intensity = fireLightIntensity * Mathf.Lerp(1f - fireFlickerAmount, 1f + fireFlickerAmount, noise);
     }
 
@@ -291,12 +347,22 @@ public class RaverJuggler : MonoBehaviour
     // PoiFireDance.Resume/Lower.
     private void UpdateVisuals()
     {
-        fireLight.gameObject.SetActive(hasArrived);
+        bool visible = hasArrived && !menuHidden;
+        fireLight.gameObject.SetActive(visible);
 
         if (poiFire != null)
         {
-            poiFire.gameObject.SetActive(hasArrived);
+            poiFire.gameObject.SetActive(visible);
         }
+    }
+
+    // Menu della modalità (DifficultyMenu): mentre balla in folla niente poi né luce (col gioco in
+    // pausa le fiamme resterebbero congelate a mezz'aria). A partita iniziata li riaccende quando è
+    // di nuovo al suo posto.
+    public void SetMenuHidden(bool hidden)
+    {
+        menuHidden = hidden;
+        UpdateVisuals();
     }
 
     // Chiunque (non solo gli Sbirro) entro dangerRadius da questo Raver: qualunque Sbirro
@@ -314,13 +380,6 @@ public class RaverJuggler : MonoBehaviour
             }
         }
 
-        foreach (RobosbirroHealth robosbirro in FindObjectsByType<RobosbirroHealth>(FindObjectsSortMode.None))
-        {
-            if ((robosbirro.transform.position - transform.position).sqrMagnitude <= sqrRadius)
-            {
-                return true;
-            }
-        }
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null && (player.transform.position - transform.position).sqrMagnitude <= sqrRadius)

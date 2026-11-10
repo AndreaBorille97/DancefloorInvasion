@@ -7,10 +7,10 @@ public static class HitStreaksFeedback
 {
     private const int Count = 6;
     private const float Lifetime = 0.2f;
-    private const float Speed = 6f;
+    private const float Speed = 3.5f; // con Lifetime fa ~0.7 m di corsa: arrivano a filo del modello partendo da vicino
     private const float Width = 0.06f;
     private const float Length = 1.2f; // lunghezza di ogni lineetta, in metri
-    private const float SideSpread = 0.7f; // quanto sono sparse ai lati del nemico
+    private const float SideSpread = 0.5f; // quanto sono sparse ai lati del nemico
     private const float HeightSpread = 0.6f; // e in altezza, attorno al petto
     private static readonly Color StreakColor = new Color(1f, 1f, 1f, 0.8f);
 
@@ -79,7 +79,7 @@ public static class HitStreaksFeedback
         for (int i = 0; i < Count; i++)
         {
             Vector3 start = center
-                + direction * (backDistance + Random.Range(0.9f, 1.5f))
+                + direction * (backDistance + Random.Range(0.4f, 0.7f))
                 + side * Random.Range(-SideSpread, SideSpread)
                 + Vector3.up * Random.Range(-HeightSpread, HeightSpread);
 

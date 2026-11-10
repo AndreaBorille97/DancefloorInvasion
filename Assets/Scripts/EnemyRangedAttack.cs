@@ -64,10 +64,6 @@ public class EnemyRangedAttack : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float fireAnimationMoment = 0.35f;
 
-    [Header("Fuga (boss morto)")]
-    [Tooltip("Ogni quanti secondi cambia la direzione di fuga casuale mentre RoutState è attivo: valori bassi la fanno sembrare più erratica.")]
-    [SerializeField] private float routDirectionChangeInterval = 1.5f;
-
     private Rigidbody rb;
     private Animator animator;
     private bool hasAttackTrigger;
@@ -85,9 +81,10 @@ public class EnemyRangedAttack : MonoBehaviour
     private float retargetTimer;
     private float fireTimer;
     private float tooCloseTimer;
-    private Vector3 routDirection;
-    private float routDirectionTimer;
     private bool hasEnteredArena;
+    private Vector3 spawnPoint; // dove è nato: ci torna quando scappa (vedi FleeHome)
+    private Vector3[] arrivalPoints; // il percorso d'arrivo intero, da rifare a ritroso in fuga
+    private RoutHome routHome;
     private Vector3[] pathPoints;
     private int pathIndex;
     private float pathReachRadius = 1.5f;
@@ -123,7 +120,19 @@ public class EnemyRangedAttack : MonoBehaviour
             }
         }
 
+        spawnPoint = rb.position;
         AcquireNearestTarget();
+    }
+
+    // Spento da SerotoninBrawl mentre lo Sbirro è in rissa: un fumogeno già in carica non deve
+    // partire lo stesso (le coroutine non si fermano da sole quando il componente si spegne).
+    void OnDisable()
+    {
+        if (pendingShot != null)
+        {
+            StopCoroutine(pendingShot);
+            pendingShot = null;
+        }
     }
 
     void OnDestroy()
@@ -162,6 +171,13 @@ public class EnemyRangedAttack : MonoBehaviour
             return;
         }
 
+        // Partita finita: niente più spari, si torna allo spawner (vedi RoutState).
+        if (RoutState.IsActive)
+        {
+            FleeHome();
+            return;
+        }
+
         retargetTimer += Time.fixedDeltaTime;
         if (retargetTimer >= retargetInterval || target == null)
         {
@@ -179,23 +195,6 @@ public class EnemyRangedAttack : MonoBehaviour
 
         if (target == null)
         {
-            return;
-        }
-
-        if (RoutState.IsActive)
-        {
-            // Boss morto: si scappa vagando a caso invece di allontanarsi in linea retta dal
-            // bersaglio, niente più spari (vedi RoutState) — così gli Sbirro non fuggono tutti
-            // sincronizzati nella stessa direzione.
-            routDirectionTimer += Time.fixedDeltaTime;
-            if (routDirectionTimer >= routDirectionChangeInterval || routDirection == Vector3.zero)
-            {
-                routDirectionTimer = 0f;
-                routDirection = GetRandomDirection();
-            }
-
-            Move(routDirection);
-            Rotate(routDirection);
             return;
         }
 
@@ -235,6 +234,13 @@ public class EnemyRangedAttack : MonoBehaviour
 
         if (distance > stopDistance)
         {
+            // Un colpo già in carica (animazione di sparo partita, vedi ShotRoutine) si finisce da
+            // fermi: tornando a inseguire andava perso, e si vedeva il gesto senza la granata.
+            if (pendingShot != null)
+            {
+                return;
+            }
+
             // Il bersaglio si è allontanato oltre la portata: torna a inseguirlo.
             state = State.Chasing;
             tooCloseTimer = 0f;
@@ -299,6 +305,7 @@ public class EnemyRangedAttack : MonoBehaviour
         }
 
         pathPoints = path.GetWorldPoints();
+        arrivalPoints = pathPoints;
         pathIndex = 0;
         pathReachRadius = path.WaypointReachRadius;
     }
@@ -313,7 +320,8 @@ public class EnemyRangedAttack : MonoBehaviour
             return false;
         }
 
-        // Boss morto: si abbandona il percorso e si scappa come gli altri (vedi RoutState).
+        // Partita finita: si abbandona il percorso e si torna indietro come gli altri (vedi
+        // FleeHome, che riparte da pathIndex, i waypoint già superati).
         if (RoutState.IsActive)
         {
             pathPoints = null;
@@ -444,10 +452,25 @@ public class EnemyRangedAttack : MonoBehaviour
         return count;
     }
 
-    private static Vector3 GetRandomDirection()
+    // Partita finita (boss e IdroSbirro abbattuti, vedi RoutState): si torna da dove si è
+    // venuti, a ritroso lungo il percorso d'arrivo fino allo spawner, e lì si sparisce.
+    private void FleeHome()
     {
-        float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+        if (routHome == null)
+        {
+            routHome = new RoutHome(spawnPoint, arrivalPoints, pathIndex, pathReachRadius);
+        }
+
+        if (!routHome.TryGetNextStop(rb.position, out Vector3 stop))
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Vector3 toStop = stop - rb.position;
+        toStop.y = 0f;
+        Move(toStop);
+        Rotate(toStop);
     }
 
     private void Move(Vector3 direction)
@@ -461,10 +484,11 @@ public class EnemyRangedAttack : MonoBehaviour
     // sia il bordo della mappa: senza questo clamp, circondato dai Raver, finisce per
     // scappare sempre verso il perimetro e restarci incollato (spingendo contro il muro
     // invisibile). Bloccando qui la posizione risultante entro i bounds del floor, la fuga
-    // scivola lungo il bordo invece di restarci piantata contro.
+    // scivola lungo il bordo invece di restarci piantata contro. In fuga a fine partita
+    // (RoutState) no: deve uscire dall'arena per tornare allo spawner (vedi FleeHome).
     private Vector3 ClampToFloor(Vector3 position)
     {
-        if (FloorBounds.Instance == null)
+        if (FloorBounds.Instance == null || RoutState.IsActive)
         {
             return position;
         }
@@ -475,12 +499,12 @@ public class EnemyRangedAttack : MonoBehaviour
         // ArenaBounds.IgnoreCollisionsForEnemy), deve poter camminare "da fuori a dentro":
         // finché non ha raggiunto una volta l'interno dell'arena non lo si clampa,
         // altrimenti verrebbe risucchiato al bordo al primo passo. Una volta entrato il
-        // clamp torna attivo (fuga lungo il bordo, RoutState) come prima.
+        // clamp torna attivo come prima.
         if (!hasEnteredArena)
         {
             bool insideArena = position.x > bounds.min.x && position.x < bounds.max.x
                 && position.z > bounds.min.z && position.z < bounds.max.z;
-            if (insideArena || RoutState.IsActive)
+            if (insideArena)
             {
                 hasEnteredArena = true;
             }

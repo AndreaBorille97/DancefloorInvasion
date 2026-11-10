@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7635991481008107014}
   - component: {fileID: 391773384710337744}
   - component: {fileID: 6363938053773072134}
+  - component: {fileID: 1745085577348888}
   m_Layer: 0
   m_Name: DeepSoundWaveAmmo
   m_TagString: Untagged
@@ -130,3 +131,15 @@ MonoBehaviour:
   bonusMaxRadius: 10
   powerUpDuration: 20
   lifespan: 10
+--- !u!114 &1745085577348888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 762708571810826871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f79bda23cb00678df6dc0f5b2a1d7f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectStarBurst

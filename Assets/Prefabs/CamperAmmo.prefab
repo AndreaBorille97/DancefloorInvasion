@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 1245981222755426349}
   - component: {fileID: -5844985367178003602}
   - component: {fileID: 3090253012198708324}
+  - component: {fileID: 1764464856146488}
   m_Layer: 0
   m_Name: CamperAmmo
   m_TagString: Untagged
@@ -1318,3 +1319,15 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4019165726597520681}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1764464856146488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367316398839186767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f79bda23cb00678df6dc0f5b2a1d7f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectStarBurst

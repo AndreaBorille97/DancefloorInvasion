@@ -28,13 +28,13 @@ public class RaverChase : MonoBehaviour
 
     [Header("Pattuglia a riposo")]
     [Tooltip("Raggio entro cui il Raver pattuglia attorno al punto di guardia quando non sta ingaggiando nessuno: tienilo piccolo, deve dare l'idea di uno spostarsi sul posto, non di un giro ampio.")]
-    [SerializeField] private float patrolRadius = 1f;
+    [SerializeField] private float patrolRadius = 0.65f;
     [Tooltip("Distanza dal punto di pattuglia corrente sotto la quale è considerato raggiunto e ne viene scelto subito un altro: bassa apposta, così il Raver non si ferma mai del tutto (a differenza di minApproachDistance, pensato per il contatto in combattimento).")]
     [SerializeField] private float patrolArrivalDistance = 0.3f;
     [Tooltip("Tempo massimo su un punto di pattuglia prima di sceglierne comunque uno nuovo, nel caso resti bloccato contro un ostacolo e non lo raggiunga mai davvero.")]
     [SerializeField] private float patrolMaxTimeOnPoint = 4f;
     [Tooltip("Velocità di movimento in pattuglia: più lenta del passo da combattimento.")]
-    [SerializeField] private float patrolMoveSpeed = 0.7f;
+    [SerializeField] private float patrolMoveSpeed = 0.5f;
     [Tooltip("Se il Raver è più lontano di così dal punto di guardia (es. appena sceso dal Camper dopo un giro), cammina dritto lì a passo normale invece di vagare lentamente in pattuglia: prima torna in posizione, poi riprende a pattugliare.")]
     [SerializeField] private float returningThreshold = 3f;
 
@@ -67,6 +67,9 @@ public class RaverChase : MonoBehaviour
     // tenere la propria sagoma fuori dagli obiettivi da proteggere.
     private CamperVehicle vehicle;
 
+    // Percorso sul NavMesh per aggirare gli ostacoli quando va da qualche parte (vedi FixedUpdate).
+    private readonly NavPathFollower navPath = new NavPathFollower();
+
     private float vehicleSpeed; // velocità corrente alla guida del Camper: sale e scende per gradi, vedi DriveVehicle
     private float steerInput;   // posizione del volante, -1 tutto a sinistra, +1 tutto a destra: si muove per gradi, non a scatti
 
@@ -79,6 +82,13 @@ public class RaverChase : MonoBehaviour
     // Sbirro). La pattuglia lenta attorno al punto di guardia non conta: lì il Raver balla.
     public bool IsWalking { get; private set; }
 
+    // Letto da RaverAnimation: alla guida del Camper il Raver si sposta, ma non cammina.
+    public bool IsDriving => vehicleMode;
+
+    // true mentre torna dritto al punto di guardia (da lontano, o scostato dal Camper): letto
+    // dall'IdroSbirro, che chi sta rientrando non lo bagna.
+    public bool IsReturningToGuard { get; private set; }
+
     // Usato da RaverDrugBuff per raddoppiare/ripristinare la velocità di movimento.
     public void MultiplyMoveSpeed(float factor)
     {
@@ -88,6 +98,9 @@ public class RaverChase : MonoBehaviour
     // Usato da RaverHealth quando il Raver va a terra, per allontanarsi un po' dal punto
     // che stava difendendo invece di restare fermo esattamente lì (vedi GoDown).
     public Vector3 GuardPosition => guardPosition;
+
+    // Il SoundSystem o la Console che difende: l'IdroSbirro sceglie i bersagli per obiettivo.
+    public Transform DefendedObjective => defendedObjective;
 
     // Usato da CamperVehicle per mandare questo Raver dritto al Camper, ignorando qualunque
     // Sbirro ingaggiato finché non arriva (vedi GetMoveDestination). Riusa Move()/Rotate()
@@ -239,6 +252,7 @@ public class RaverChase : MonoBehaviour
         bool isReturning = isIdle
             && (pushedAside
                 || (rb.position - guardPosition).sqrMagnitude > returningThreshold * returningThreshold);
+        IsReturningToGuard = isReturning;
         if (isIdle && !isReturning)
         {
             UpdatePatrol();
@@ -258,7 +272,25 @@ public class RaverChase : MonoBehaviour
         }
 
         bool slowIdle = isIdle && !isReturning;
-        bool moved = Move(toTarget, slowIdle ? patrolMoveSpeed : moveSpeed, slowIdle ? patrolArrivalDistance : minApproachDistance);
+
+        // Quando va da qualche parte (non nella pattuglia lenta, che resta a due passi dal posto)
+        // aggira gli ostacoli in mezzo, es. l'IdroSbirro parcheggiato, passando per gli angoli del
+        // percorso sul NavMesh: sono tappe da raggiungere davvero, quindi senza soglia d'arresto.
+        // toTarget resta la direzione verso la meta vera, per come il Raver si gira qui sotto.
+        Vector3 toStep = toTarget;
+        bool isPathCorner = false;
+        if (!slowIdle)
+        {
+            toStep = navPath.GetNextWaypoint(rb.position, destination, out isPathCorner) - rb.position;
+            toStep.y = 0f;
+        }
+
+        bool moved = Move(toStep, slowIdle ? patrolMoveSpeed : moveSpeed,
+            isPathCorner ? 0f : slowIdle ? patrolArrivalDistance : minApproachDistance);
+        if (isPathCorner)
+        {
+            toTarget = toStep; // in giro attorno all'ostacolo guarda dove cammina
+        }
         IsWalking = moved && !slowIdle;
 
         // Diretto al Camper o alla chillout il Raver lascia il suo posto e guarda dove va. Al
@@ -423,6 +455,11 @@ public class RaverChase : MonoBehaviour
 
         foreach (EnemyHealth enemy in FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None))
         {
+            if (enemy.IsCharmed)
+            {
+                continue; // convertito dalla serotonina: sta dalla nostra parte (SerotoninBrawl)
+            }
+
             float sqrDistance = (enemy.transform.position - referencePoint).sqrMagnitude;
             if (sqrDistance <= sqrMaxRadius && sqrDistance < nearestSqrDistance)
             {

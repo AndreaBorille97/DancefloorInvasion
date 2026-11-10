@@ -8,12 +8,16 @@ using UnityEngine;
 public class DJConsoleHealth : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
-    [SerializeField] private int maxHits = 10; // quanti colpi di Sbirro può subire prima di essere distrutta
+    [SerializeField] private int maxHits = 15; // quanti colpi di Sbirro può subire prima di essere distrutta
 
     [Header("Feedback danno")]
     [SerializeField] private Renderer targetRenderer; // se vuoto viene cercato su questo GameObject/figli
     [SerializeField] private Color flashColor = Color.red;
     [SerializeField] private float flashDuration = 0.15f; // durata del lampo di colore
+
+    [Header("DJ")]
+    [Tooltip("Nome del GameObject del DJ in scena: sparisce insieme alla Console quando salta in aria.")]
+    [SerializeField] private string djName = "DJ";
 
     private int hitsTaken;
     private bool isDestroyed;
@@ -62,11 +66,16 @@ public class DJConsoleHealth : MonoBehaviour, IEnemyAttackTarget
         }
     }
 
+    // Salta in aria come il Player (DefeatSequence): se è fuori dallo schermo la camera prima ci
+    // va, e fino ad allora la Console resta in scena, già non più attaccabile.
     private void Die()
     {
         isDestroyed = true;
-        GameOverState.Trigger();
-        Destroy(gameObject);
+
+        // Il DJ è un modello a parte in scena (Prefabs/models/RAVERS/dj/DJ.fbx): sparisce con la
+        // Console nel momento dell'esplosione, senza spostarne il centro (e quindi l'inquadratura).
+        GameObject dj = string.IsNullOrEmpty(djName) ? null : GameObject.Find(djName);
+        DefeatSequence.Play(gameObject, dj != gameObject ? dj : null);
     }
 
     private void PlayHitFlash()

@@ -47,7 +47,28 @@ public class SoundWaveProjectile : MonoBehaviour
     [Tooltip("Se attivo, l'opacità del modello 3D cala man mano che l'onda raggiunge il raggio massimo.")]
     [SerializeField] private bool customVisualFadeOut = true;
 
+    [Header("Visuale anello sonico (SonicDoubleWave)")]
+    [Tooltip("Se assegnato (es. SonicRingShot da Prefabs/particles/SonicDoubleWave/Prefabs), ad ogni onda partono due anelli affiancati che volano in avanti fino a maxRadius nello stesso tempo dell'espansione. Sono solo grafica: il loro danno viene azzerato, colpi e cure restano di questo script, che però al posto del cono usa la zona coperta dai due anelli. Sostituisce lo spicchio piatto (vedi alsoShowFlatWave).")]
+    [SerializeField] private SonicRingShot ringVisualPrefab;
+    [Tooltip("Distanza fra i centri dei due anelli, di lato rispetto alla direzione di tiro.")]
+    [SerializeField] private float ringSpacing = 1.4f;
+    [Tooltip("Margine aggiunto al raggio degli anelli per decidere chi viene colpito: tiene conto della stazza dei nemici, che vengono misurati dal centro.")]
+    [SerializeField] private float ringHitPadding = 0.5f;
+    [Tooltip("Anelli usati al posto di ringVisualPrefab in modalità berserk (SonicRingShot_Berserk). Se vuoto restano quelli normali.")]
+    [SerializeField] private SonicRingShot berserkRingPrefab;
+    [Tooltip("Anelli usati al posto di ringVisualPrefab con il potere serotonina attivo (SonicRingShot di Prefabs/particles/Onde Serotonina). Se vuoto restano quelli normali.")]
+    [SerializeField] private SonicRingShot serotoninRingPrefab;
+    [Tooltip("Con serotonina e berserk insieme partono sia gli anelli serotonina sia quelli rossi berserk: questa è la luminosità dei rossi (1 = piena), per non coprire del tutto gli altri.")]
+    [Range(0f, 1f)] [SerializeField] private float comboRingOpacity = 0.6f;
+
     private float currentRadius;
+    private float elapsed;
+    private float ringStartRadius;
+    private float ringEndRadius;
+    private float bonusConeAngleApplied; // gradi del bonus Area, riusati per allargare gli anelli
+    private bool isBerserk; // vedi MakeBerserk
+    private bool isSerotonin; // vedi MakeSerotonin
+    private float? ringHeight; // quota degli anelli impostata da LaunchFromSpeakers; null = transform.position.y + visualYOffset
     private readonly HashSet<Collider> alreadyHit = new HashSet<Collider>();
     private readonly HashSet<Collider> alreadyHealed = new HashSet<Collider>();
 
@@ -72,12 +93,105 @@ public class SoundWaveProjectile : MonoBehaviour
     {
         // Lo spicchio piatto si crea solo se non c'è un modello 3D che lo sostituisce
         // (o se alsoShowFlatWave chiede di tenerli entrambi).
-        if (customVisualPrefab == null || alsoShowFlatWave)
+        if ((customVisualPrefab == null && ringVisualPrefab == null) || alsoShowFlatWave)
         {
             CreateVisual();
         }
 
         CreateCustomVisual();
+    }
+
+    // In Start e non in Awake: così maxRadius include già i bonus di ApplyPowerUps,
+    // chiamato da PlayerShooting subito dopo l'Instantiate.
+    void Start()
+    {
+        CreateRingVisuals();
+    }
+
+    private bool HasRings => ringVisualPrefab != null;
+
+    private SonicRingShot ActiveRingPrefab =>
+        isSerotonin && serotoninRingPrefab != null ? serotoninRingPrefab
+        : isBerserk && berserkRingPrefab != null ? berserkRingPrefab
+        : ringVisualPrefab;
+
+    // Chiamato da PlayerShooting col potere serotonina attivo (vedi PlayerSerotonin), subito dopo
+    // l'Instantiate: anelli serotonina, e il colpo di grazia converte invece di uccidere (vedi
+    // EnemyHealth.TakeSerotoninDamage).
+    public void MakeSerotonin()
+    {
+        isSerotonin = true;
+    }
+
+    // Chiamato da PlayerShooting col berserk attivo (vedi PlayerBerserk), subito dopo
+    // l'Instantiate: anelli rossi più larghi e danno moltiplicato.
+    public void MakeBerserk(float damageMultiplier)
+    {
+        isBerserk = true;
+        damage *= damageMultiplier;
+    }
+
+    private float Duration => maxRadius / Mathf.Max(expandSpeed, 0.01f);
+
+    // Gli anelli non sono figli dell'onda: SonicRingShot si muove da solo in coordinate mondo
+    // dal punto di sparo e si distrugge a fine corsa.
+    private void CreateRingVisuals()
+    {
+        if (!HasRings)
+        {
+            return;
+        }
+
+        // Il bonus Area, pensato in gradi di apertura del cono, qui allarga gli anelli: a fine
+        // corsa ciascuno è più largo di quanto si sarebbe aperto il cono di quei gradi in più.
+        // In berserk gli anelli rossi sono più larghi: la zona colpita (IsInHitZone) li segue.
+        SonicRingShot prefab = ActiveRingPrefab;
+        // Serotonina e berserk insieme: partono anche gli anelli rossi, sopra quelli serotonina,
+        // e la zona colpita segue i più larghi dei due.
+        SonicRingShot comboPrefab = isSerotonin && isBerserk && prefab != berserkRingPrefab ? berserkRingPrefab : null;
+        float baseEndRadius = comboPrefab != null ? Mathf.Max(prefab.endRadius, comboPrefab.endRadius) : prefab.endRadius;
+        ringStartRadius = comboPrefab != null ? Mathf.Max(prefab.startRadius, comboPrefab.startRadius) : prefab.startRadius;
+        ringEndRadius = baseEndRadius + maxRadius * Mathf.Tan(bonusConeAngleApplied * 0.5f * Mathf.Deg2Rad);
+
+        Vector3 right = Flat(transform.right);
+        Vector3 origin = transform.position + Vector3.up * visualYOffset;
+        if (ringHeight.HasValue)
+        {
+            origin.y = ringHeight.Value;
+        }
+        SpawnRing(prefab, origin - right * (ringSpacing * 0.5f), 1f);
+        SpawnRing(prefab, origin + right * (ringSpacing * 0.5f), 1f);
+        if (comboPrefab != null)
+        {
+            SpawnRing(comboPrefab, origin - right * (ringSpacing * 0.5f), comboRingOpacity);
+            SpawnRing(comboPrefab, origin + right * (ringSpacing * 0.5f), comboRingOpacity);
+        }
+    }
+
+    private void SpawnRing(SonicRingShot prefab, Vector3 position, float opacity)
+    {
+        SonicRingShot ring = Instantiate(prefab, position, Quaternion.LookRotation(Flat(transform.forward)));
+        ring.damage = 0f;
+        ring.knockback = 0f;
+        ring.hitMask = 0; // nessun collider trovato: niente danno né spinta, solo grafica
+        ring.range = maxRadius;
+        ring.duration = Duration;
+        ring.endRadius = ringEndRadius;
+        ring.opacity = opacity;
+        ring.Init(1f);
+    }
+
+    // Chiamato da PlayerShooting subito dopo l'Instantiate, prima di Start (dove nascono gli
+    // anelli): i due anelli partono dalle casse del modello del Player invece che a ringSpacing
+    // di distanza attorno al punto di sparo. L'onda si sposta in pianta a metà fra le due casse,
+    // ma resta alla sua quota (la zona colpita è misurata in piano); solo gli anelli salgono
+    // all'altezza delle casse.
+    public void LaunchFromSpeakers(Vector3 left, Vector3 right)
+    {
+        Vector3 middle = (left + right) * 0.5f;
+        transform.position = new Vector3(middle.x, transform.position.y, middle.z);
+        ringSpacing = Mathf.Abs(Vector3.Dot(right - left, Flat(transform.right)));
+        ringHeight = middle.y;
     }
 
     // Chiamato da PlayerShooting subito dopo l'Instantiate, prima che Update parta:
@@ -91,6 +205,7 @@ public class SoundWaveProjectile : MonoBehaviour
         }
 
         coneAngle += bonusConeAngle;
+        bonusConeAngleApplied += bonusConeAngle;
         maxRadius += bonusMaxRadius;
 
         if (visualMeshFilter != null)
@@ -101,7 +216,22 @@ public class SoundWaveProjectile : MonoBehaviour
 
     void Update()
     {
-        currentRadius += expandSpeed * Time.deltaTime;
+        if (HasRings)
+        {
+            // Il fronte d'onda segue gli anelli, che rallentano verso la fine della corsa (stessa
+            // curva di SonicRingShot): così un nemico viene colpito quando l'anello lo raggiunge.
+            elapsed += Time.deltaTime;
+            float p = Mathf.Clamp01(elapsed / Duration);
+            currentRadius = maxRadius * (1f - Mathf.Pow(1f - p, 2.2f));
+            if (p >= 1f)
+            {
+                currentRadius = maxRadius;
+            }
+        }
+        else
+        {
+            currentRadius += expandSpeed * Time.deltaTime;
+        }
 
         DamageEnemiesInRange();
         HealRaversInRange();
@@ -114,11 +244,45 @@ public class SoundWaveProjectile : MonoBehaviour
         }
     }
 
+    // Physics non ha un OverlapCone: si cerca in una sfera che contiene tutta la zona colpita e
+    // poi si filtra con IsInHitZone. Con gli anelli la zona sporge di lato oltre il fronte
+    // d'onda, quindi la sfera va allargata di quanto sporge.
+    private float SearchRadius => HasRings
+        ? currentRadius + ringSpacing * 0.5f + ringEndRadius + ringHitPadding
+        : currentRadius;
+
+    private static Vector3 Flat(Vector3 v)
+    {
+        v.y = 0f;
+        return v.sqrMagnitude > 0.0001f ? v.normalized : Vector3.forward;
+    }
+
+    // Zona colpita: con gli anelli, i due "tubi" che lasciano dietro di sé (larghi quanto
+    // l'anello in quel punto, più ringHitPadding) fino al fronte d'onda; senza, il cono classico.
+    private bool IsInHitZone(Vector3 targetPosition)
+    {
+        Vector3 toTarget = targetPosition - transform.position;
+        toTarget.y = 0f; // confronto sul piano orizzontale, come EnemyChase
+
+        if (!HasRings)
+        {
+            return Vector3.Angle(transform.forward, toTarget) <= coneAngle * 0.5f;
+        }
+
+        float along = Vector3.Dot(toTarget, Flat(transform.forward));
+        if (along < 0f || along > currentRadius)
+        {
+            return false;
+        }
+
+        float halfWidth = Mathf.Lerp(ringStartRadius, ringEndRadius, along / Mathf.Max(maxRadius, 0.01f)) + ringHitPadding;
+        float side = Vector3.Dot(toTarget, Flat(transform.right));
+        return Mathf.Abs(side + ringSpacing * 0.5f) <= halfWidth || Mathf.Abs(side - ringSpacing * 0.5f) <= halfWidth;
+    }
+
     private void DamageEnemiesInRange()
     {
-        // Il raggio di ricerca resta una sfera (Physics non ha un OverlapCone),
-        // il filtro angolare sotto esclude chi è dentro il raggio ma fuori dal cono.
-        Collider[] hits = Physics.OverlapSphere(transform.position, currentRadius, targetMask);
+        Collider[] hits = Physics.OverlapSphere(transform.position, SearchRadius, targetMask);
         foreach (var hit in hits)
         {
             if (alreadyHit.Contains(hit))
@@ -126,19 +290,31 @@ public class SoundWaveProjectile : MonoBehaviour
                 continue;
             }
 
-            Vector3 toTarget = hit.transform.position - transform.position;
-            toTarget.y = 0f; // confronto sul piano orizzontale, come EnemyChase
-
-            if (Vector3.Angle(transform.forward, toTarget) > coneAngle * 0.5f)
+            if (!IsInHitZone(hit.transform.position))
             {
-                continue; // dentro al raggio ma fuori dall'apertura del cono
+                continue; // dentro alla sfera di ricerca ma fuori dalla zona colpita
             }
 
             alreadyHit.Add(hit);
             EnemyHealth enemyHealth = hit.GetComponent<EnemyHealth>();
             if (enemyHealth != null)
             {
-                enemyHealth.TakeDamage(damage, transform.position);
+                // Uno Sbirro convertito dalla serotonina sta col Player: niente danno. Le onde
+                // serotonina non fanno niente a chi non si può convertire (IdroSbirro), nemmeno
+                // il feedback di colpo.
+                if (enemyHealth.IsCharmed || (isSerotonin && !SerotoninBrawl.CanBrawl(enemyHealth)))
+                {
+                    continue;
+                }
+
+                if (isSerotonin)
+                {
+                    enemyHealth.TakeSerotoninDamage(damage, transform.position);
+                }
+                else
+                {
+                    enemyHealth.TakeDamage(damage, transform.position);
+                }
                 HitEvents.RaiseEnemyHit(enemyHealth.gameObject, transform.position); // feedback di colpo (Hit*Feedback.cs)
             }
         }
@@ -148,7 +324,7 @@ public class SoundWaveProjectile : MonoBehaviour
     {
         // Nessun LayerMask qui: il Raver non è detto sia sul layer nemici (targetMask),
         // quindi cerchiamo direttamente chi ha un RaverHealth, come fa CamperProjectile con EnemyHealth.
-        Collider[] hits = Physics.OverlapSphere(transform.position, currentRadius);
+        Collider[] hits = Physics.OverlapSphere(transform.position, SearchRadius);
         foreach (var hit in hits)
         {
             if (alreadyHealed.Contains(hit))
@@ -162,12 +338,9 @@ public class SoundWaveProjectile : MonoBehaviour
                 continue;
             }
 
-            Vector3 toTarget = hit.transform.position - transform.position;
-            toTarget.y = 0f;
-
-            if (Vector3.Angle(transform.forward, toTarget) > coneAngle * 0.5f)
+            if (!IsInHitZone(hit.transform.position))
             {
-                continue; // dentro al raggio ma fuori dall'apertura del cono
+                continue; // dentro alla sfera di ricerca ma fuori dalla zona colpita
             }
 
             alreadyHealed.Add(hit);

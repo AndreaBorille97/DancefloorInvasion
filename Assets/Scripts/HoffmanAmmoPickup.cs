@@ -1,8 +1,8 @@
 using UnityEngine;
 
 // Da mettere sul prefab HoffmanAmmo (Assets/Prefabs/HoffmanAmmo.prefab), con un Collider
-// impostato come Trigger (Is Trigger = true). Quando il Player lo tocca gli dà un buco nero in
-// tasca (vedi PlayerBlackHoleThrow.AddCharges), da lanciare con L1 quando vuole, e si distrugge.
+// impostato come Trigger (Is Trigger = true). Quando il Player lo tocca gli dà un Hoffman in
+// tasca (vedi PlayerHoffman.AddCharges), da lanciare con L1 quando vuole, e si distrugge.
 // Se invece non viene raccolto entro lifespan secondi, scompare comunque da solo (stesso
 // comportamento di SpeedUpPowerUpAmmoPickup).
 //
@@ -11,7 +11,7 @@ using UnityEngine;
 public class HoffmanAmmoPickup : MonoBehaviour
 {
     [SerializeField] private float lifespan = 10f; // N: secondi dopo cui il powerup scompare se non raccolto
-    [Tooltip("Quanti buchi neri dà una raccolta.")]
+    [Tooltip("Quanti Hoffman dà una raccolta.")]
     [SerializeField] private int blackHoles = 1;
 
     void Start()
@@ -21,7 +21,7 @@ public class HoffmanAmmoPickup : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        PlayerBlackHoleThrow thrower = other.GetComponent<PlayerBlackHoleThrow>();
+        PlayerHoffman thrower = other.GetComponent<PlayerHoffman>();
         if (thrower == null)
         {
             return;

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5065894105124308688}
   - component: {fileID: 8849331211932745639}
   - component: {fileID: -6559183042260844934}
+  - component: {fileID: 549150496259188}
   m_Layer: 0
   m_Name: RaverAmmo
   m_TagString: Untagged
@@ -127,3 +128,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RaverPickup
   raverPrefab: {fileID: 7268827633277165515, guid: f17b0ac7d74766640919bb8569d47292, type: 3}
   lifespan: 10
+--- !u!114 &549150496259188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2311333911405948234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f79bda23cb00678df6dc0f5b2a1d7f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollectStarBurst

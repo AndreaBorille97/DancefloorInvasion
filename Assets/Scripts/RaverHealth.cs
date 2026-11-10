@@ -10,7 +10,7 @@ using UnityEngine;
 // disabilita subito RaverAttack (non ingaggia più nessuno) e cambia colore, ma il collider
 // resta attivo così l'onda sonora del Player continua a rilevarlo e può rianimarlo; la
 // polizia lo ignora già da questo momento, anche mentre è ancora in cammino — sia come
-// bersaglio da inseguire (EnemyChase/EnemyRangedAttack/IdroSbirroHoseAttack, filtrano su
+// bersaglio da inseguire (EnemyChase/EnemyRangedAttack/IdroSbirro, filtrano su
 // IsDown) sia come cosa da colpire a contatto (EnemyAttack e gli altri attacchi filtrano su
 // CanBeAttacked, che qui vale !isDown). Se in scena c'è una ChilloutZone, invece di
 // teletrasportarsi ci cammina sopra a piedi (RaverChase resta attivo, dirottato con
@@ -40,15 +40,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     [SerializeField] private float passiveHealPerSecond = 4f;
 
     [Header("Evidenziazione onda")]
-    [Tooltip("Quanto si schiarisce il colore del Raver quando viene curato da un'onda sonora (1 = nessun cambiamento).")]
-    [SerializeField] private float healHighlightBrightness = 1.6f;
+    [Tooltip("Colore del lampo quando il Raver viene curato da un'onda sonora: verde 'salute', come nei videogiochi.")]
+    [SerializeField] private Color healHighlightColor = new Color(0.25f, 1f, 0.3f, 1f);
     [Tooltip("Durata del lampo di colore, in secondi.")]
-    [SerializeField] private float healHighlightDuration = 0.15f;
-
-    [Header("Colpo fendente Robosbirro")]
-    [Tooltip("Colore del lampo quando il Raver viene colpito dal fendente ad area del Robosbirro (vedi RobosbirroMeleeAttack), per distinguerlo da un colpo Sbirro normale.")]
-    [SerializeField] private Color meleeFlashColor = Color.black;
-    [SerializeField] private float meleeFlashDuration = 0.15f;
+    [SerializeField] private float healHighlightDuration = 0.2f;
+    [Tooltip("Quante stelline verdi salgono dal Raver ad ogni cura.")]
+    [SerializeField] private int healStarCount = 6;
 
     [Header("Buff di gruppo (giocoliere)")]
     [Tooltip("Colore persistente applicato mentre il buff di gruppo del giocoliere è attivo (vedi RaverJuggler/SetGroupBuffTint), finché non va a terra (in quel caso resta downColor).")]
@@ -72,6 +69,9 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     }
 
     private float currentHealth;
+    // Moltiplicatore della modalità facile sulla vita (vedi GameDifficulty): 1 in normale. La
+    // rianimazione non ne risente, vedi ReviveHealth.
+    private float difficultyMultiplier = 1f;
     private bool isDown;
     private bool isWalkingToChillout; // true dal momento in cui va a terra fino all'arrivo alla ChilloutZone (vedi CheckChilloutArrival): durante il tragitto niente cura passiva
     private bool isInvulnerable;
@@ -93,7 +93,6 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     private MaterialPropertyBlock propertyBlock;
     private Color baseColor;
     private Coroutine highlightRoutine;
-    private Coroutine meleeFlashRoutine;
 
     // Usato da CamperVehicle/PlayerCamperSummon: un Raver a terra non può essere richiamato a pilotare il Camper.
     public bool IsDown => isDown;
@@ -106,8 +105,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     // Usato dalla minimappa (vedi MinimapUI) per mostrare quanta vita resta: riflette la
     // vita reale anche a terra, così si vede quanto manca alla rianimazione (che richiede
-    // di tornare a currentHealth == maxHealth, vedi Heal).
-    public float HealthFraction => Mathf.Clamp01(currentHealth / maxHealth);
+    // di tornare a currentHealth == ReviveHealth, vedi Heal).
+    public float HealthFraction => Mathf.Clamp01(currentHealth / (isDown ? ReviveHealth : maxHealth));
+
+    // Vita da accumulare a terra per rialzarsi: quella della modalità normale anche in facile, così
+    // rianimare costa lo stesso. Il triplo della vita conta solo da in piedi (vedi Reactivate).
+    private float ReviveHealth => maxHealth / difficultyMultiplier;
 
     // Chiamato da CamperVehicle su Mount/Dismount: mentre pilota il Camper il Raver non
     // subisce alcun danno, a prescindere da chi/cosa lo colpisce.
@@ -125,8 +128,9 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     public void SetGroupBuffTint(bool active)
     {
         isGroupBuffTinted = active;
+        UpdateBuffAura();
 
-        if (raverRenderer == null || highlightRoutine != null || meleeFlashRoutine != null)
+        if (raverRenderer == null || highlightRoutine != null)
         {
             return;
         }
@@ -138,6 +142,17 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     {
         currentHealth = maxHealth;
 
+        // Modalità facile: triplo della vita. I Raver già in scena nascono prima della scelta dal
+        // menu (vedi DifficultyMenu), quindi aspettano l'evento; quelli generati dopo la leggono subito.
+        if (GameDifficulty.IsEasy)
+        {
+            ApplyEasyHealth();
+        }
+        else
+        {
+            GameDifficulty.Chosen += HandleDifficultyChosen;
+        }
+
         rb = GetComponent<Rigidbody>();
         raverChase = GetComponent<RaverChase>();
         raverAttack = GetComponent<RaverAttack>();
@@ -147,6 +162,12 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         {
             propertyBlock = new MaterialPropertyBlock();
             baseColor = raverRenderer.sharedMaterial.color;
+        }
+
+        // Cerchio verde tenue sotto i piedi, come quello degli Sbirro (vedi RaverMarker).
+        if (GetComponent<RaverMarker>() == null)
+        {
+            gameObject.AddComponent<RaverMarker>();
         }
     }
 
@@ -208,7 +229,9 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
             highlightRoutine = StartCoroutine(HealHighlightRoutine());
         }
 
-        if (isDown && currentHealth >= maxHealth)
+        HealStarsBurst.Spawn(gameObject, healStarCount);
+
+        if (isDown && currentHealth >= ReviveHealth)
         {
             Reactivate();
         }
@@ -319,7 +342,7 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         return rb.position + awayDirection.normalized * downDisplacementDistance;
     }
 
-    // Chiamato da Heal() quando la vita accumulata da terra raggiunge maxHealth: torna a
+    // Chiamato da Heal() quando la vita accumulata da terra raggiunge ReviveHealth: torna a
     // fare la guardia come un Raver normale (RaverChase.Awake è già passato, guardPosition
     // resta quella originale anche riabilitando il componente). Può succedere anche mentre è
     // ancora in cammino verso la ChilloutZone (il cono del Player cura più in fretta della
@@ -327,6 +350,8 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
     private void Reactivate()
     {
         isDown = false;
+        // In facile la soglia di rianimazione è sotto la vita massima: si rialza comunque a vita piena.
+        currentHealth = maxHealth;
 
         if (isWalkingToChillout)
         {
@@ -359,17 +384,13 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
 
     // Lampo di colore che segnala visivamente il momento in cui l'onda sonora del Player cura
     // questo Raver (Heal viene chiamato una sola volta a onda, vedi SoundWaveProjectile.alreadyHealed).
-    // Schiarisce il colore persistente corrente (downColor a terra, groupBuffColor se il buff
-    // del giocoliere è attivo, altrimenti baseColor) e al termine lo ripristina esattamente:
-    // altrimenti il Raver tornerebbe visivamente al colore "di base" perdendo qualunque tint
-    // fosse attivo in quel momento.
+    // Il Raver diventa verde (healHighlightColor) e al termine torna esattamente al colore
+    // persistente corrente (downColor a terra, groupBuffColor se il buff del giocoliere è attivo,
+    // altrimenti baseColor): altrimenti tornerebbe visivamente al colore "di base" perdendo
+    // qualunque tint fosse attivo in quel momento.
     private IEnumerator HealHighlightRoutine()
     {
-        Color from = GetPersistentColor();
-        Color highlighted = from;
-        highlighted.r *= healHighlightBrightness;
-        highlighted.g *= healHighlightBrightness;
-        highlighted.b *= healHighlightBrightness;
+        Color highlighted = healHighlightColor;
 
         raverRenderer.GetPropertyBlock(propertyBlock);
         propertyBlock.SetColor("_BaseColor", highlighted); // URP/Lit
@@ -382,32 +403,24 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         ApplyPersistentColor();
     }
 
-    // Chiamato da RobosbirroMeleeAttack quando il fendente ad area colpisce questo Raver.
-    public void PlayMeleeFlash()
+    private void HandleDifficultyChosen(GameDifficulty.Mode mode)
     {
-        if (raverRenderer == null)
+        GameDifficulty.Chosen -= HandleDifficultyChosen;
+        if (mode == GameDifficulty.Mode.Easy)
         {
-            return;
+            ApplyEasyHealth();
         }
-
-        if (meleeFlashRoutine != null)
-        {
-            StopCoroutine(meleeFlashRoutine);
-        }
-        meleeFlashRoutine = StartCoroutine(MeleeFlashRoutine());
     }
 
-    private IEnumerator MeleeFlashRoutine()
+    private void ApplyEasyHealth()
     {
-        raverRenderer.GetPropertyBlock(propertyBlock);
-        propertyBlock.SetColor("_BaseColor", meleeFlashColor); // URP/Lit
-        propertyBlock.SetColor("_Color", meleeFlashColor); // Standard/fallback
-        raverRenderer.SetPropertyBlock(propertyBlock);
+        difficultyMultiplier = GameDifficulty.EasyRaverHealthMultiplier;
+        MultiplyHealth(difficultyMultiplier);
+    }
 
-        yield return new WaitForSeconds(meleeFlashDuration);
-
-        meleeFlashRoutine = null;
-        ApplyPersistentColor();
+    void OnDestroy()
+    {
+        GameDifficulty.Chosen -= HandleDifficultyChosen;
     }
 
     // Usato da RaverDrugBuff: scala vita massima e attuale insieme, così la percentuale di
@@ -432,11 +445,22 @@ public class RaverHealth : MonoBehaviour, IEnemyAttackTarget
         return isGroupBuffTinted ? groupBuffColor : baseColor;
     }
 
+    // Aura rossa del boost del giocoliere (vedi CharacterAura): il tint della capsula non si vede
+    // più, coi modelli animati la capsula è spenta. Solo sulle guardie in piedi: non a terra (lì
+    // il boost non serve a niente) e non sul giocoliere stesso, che il boost lo dà.
+    private void UpdateBuffAura()
+    {
+        bool isJuggler = TryGetComponent(out RaverJuggler juggler) && juggler.IsJuggler;
+        CharacterAura.Set(gameObject, CharacterAura.Style.RaverBoost, isGroupBuffTinted && !isDown && !isJuggler);
+    }
+
     // Applica subito GetPersistentColor() al Renderer: usata ogni volta che lo stato
     // persistente cambia (a terra, rianimato, tint di gruppo) o che un lampo temporaneo
     // finisce e deve rivelare il colore che c'era sotto.
     private void ApplyPersistentColor()
     {
+        UpdateBuffAura();
+
         if (raverRenderer == null)
         {
             return;

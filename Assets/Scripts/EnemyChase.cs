@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 
 // Da mettere sul prefab del nemico (lo stesso che spawna EnemySpawner).
 // Il nemico insegue sul piano orizzontale (X/Z) uno tra Console/DJ e SoundSystem (i due
@@ -20,10 +19,10 @@ public class EnemyChase : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 4.5f; // velocità di inseguimento (unità al secondo)
-    [Tooltip("Distanza dal punto di avvicinamento (vedi FixedUpdate) sotto la quale il nemico smette di avvicinarsi ulteriormente. Senza questa soglia il nemico continuerebbe a spingersi verso il bersaglio ad ogni FixedUpdate anche a contatto avvenuto: dato che sia i nemici sia i Raver sono Rigidbody non kinematic, quella spinta continua li sposta fisicamente invece di restarci semplicemente a contatto. Tienila di poco inferiore alla somma dei raggi dei collider di nemico e bersaglio, altrimenti non lo tocca mai e EnemyAttack (a contatto) non parte.")]
+    [Tooltip("Distanza dal punto di avvicinamento (vedi FixedUpdate) sotto la quale il nemico smette di avvicinarsi ulteriormente. Senza questa soglia il nemico continuerebbe a spingersi verso il bersaglio ad ogni FixedUpdate anche a contatto avvenuto: dato che sia i nemici sia i Raver sono Rigidbody non kinematic, quella spinta continua li sposta fisicamente invece di restarci semplicemente a contatto. È misurata dal centro del nemico alla superficie del bersaglio, quindi per toccarlo deve stare sotto il raggio del nemico: in gioco viene comunque limitata al 90% del raggio, altrimenti EnemyAttack (a contatto) non partirebbe mai.")]
     [SerializeField] private float stopDistance = 0.9f;
     [Tooltip("A quanti metri dalla faccia di Console/SoundSystem il nemico si ferma per attaccarla, misurati dal bordo del suo collider (non dal centro, quindi vale uguale per nemici piccoli e grandi). L'attacco agli obiettivi parte da qui, senza contatto fisico (vedi EnemyAttack/IsAtObjective): così nessuno si schiaccia contro le casse o ci si infila dentro.")]
-    [SerializeField] private float objectiveStandoff = 1f;
+    [SerializeField] private float objectiveStandoff = 2f;
 
     [Header("Animazione")]
     [Tooltip("Moltiplicatore di velocità dell'Animator (1 = normale): il movimento è gestito interamente da script (niente root motion), quindi il ciclo di camminata va accelerato a parte per restare a passo con moveSpeed.")]
@@ -41,10 +40,6 @@ public class EnemyChase : MonoBehaviour
     [Tooltip("Su 5 nemici nati (contati tra tutti gli spawner insieme, vedi objectiveAssignmentCounter), quanti puntano di default alla Console invece che al SoundSystem: i restanti vanno al SoundSystem. Dai punti di spawn (a metà dei lati sx/dx) il SoundSystem risulta quasi sempre l'obiettivo geometricamente più vicino, quindi senza questa quota i nemici convergerebbero quasi tutti lì, ignorando la Console. Ignorato dai nemici che stanno già inseguendo Raver/Player: sceglie solo tra Console e SoundSystem quando non c'è nient'altro da fare.")]
     [SerializeField] private int consoleSharePerFive = 2;
 
-    [Header("Fuga (boss morto)")]
-    [Tooltip("Ogni quanti secondi cambia la direzione di fuga casuale mentre RoutState è attivo: valori bassi la fanno sembrare più erratica.")]
-    [SerializeField] private float routDirectionChangeInterval = 1.5f;
-
     [Header("Posizionamento")]
     [Tooltip("Se attivo, alla comparsa ignora l'altezza di spawn impostata su EnemySpawner e si riposiziona esattamente sulla superficie di FloorBounds. Utile per modelli con la Y tarata a occhio (es. il rig di Sbirro1), a cui il buffer verticale dello spawner farebbe fluttuare i piedi sopra il pavimento.")]
     [SerializeField] private bool snapToFloorOnSpawn = false;
@@ -61,9 +56,10 @@ public class EnemyChase : MonoBehaviour
     private Collider targetCollider;
     private Vector3 lastApproachPoint; // per il debug via gizmo, vedi OnDrawGizmosSelected
     private float retargetTimer;
-    private Vector3 routDirection;
-    private float routDirectionTimer;
     private bool hasEnteredArena;
+    private Vector3 spawnPoint; // dove è nato: ci torna quando scappa (vedi FleeHome)
+    private Vector3[] arrivalPoints; // il percorso d'arrivo intero, da rifare a ritroso in fuga
+    private RoutHome routHome;
     private Vector3[] pathPoints;
     private int pathIndex;
     private float pathReachRadius = 1.5f;
@@ -117,23 +113,24 @@ public class EnemyChase : MonoBehaviour
     // Letto per non cambiare bersaglio a metà attacco (vedi il retarget in FixedUpdate).
     private EnemyAttack enemyAttack;
 
-    // Percorso sul NavMesh verso il punto di avvicinamento (vedi GetNextWaypoint): ricalcolato
-    // ogni PathRefreshInterval secondi, o prima se la meta si è spostata parecchio.
-    private NavMeshPath navPath;
-    private readonly Vector3[] pathCorners = new Vector3[32];
-    private int pathCornerCount;
-    private int pathCornerIndex;
-    private float pathRefreshTimer;
-    private Vector3 pathGoal;
-    private const float PathRefreshInterval = 0.25f;
-    // Quanto può spostarsi la meta prima di forzare un nuovo percorso senza aspettare il timer.
-    private const float PathGoalMoveThreshold = 1f;
-    // Distanza entro cui un angolo del percorso conta come raggiunto e si passa al successivo.
-    private const float PathCornerReachRadius = 0.3f;
-    // Quanto lontano dal NavMesh si cerca il punto più vicino, per partenza e meta: copre la
-    // differenza d'altezza fra pivot del nemico e pavimento e l'eventuale sconfinamento dentro
-    // il margine di un ostacolo.
-    private const float NavMeshSampleDistance = 3f;
+    // Percorso sul NavMesh verso il punto di avvicinamento (vedi GetNextWaypoint).
+    private readonly NavPathFollower navPath = new NavPathFollower();
+
+    // Camminata sul posto. Gli Sbirro a contatto (Sbirro*New_Controller) hanno solo camminata e
+    // attacco, niente idle: fermi per qualsiasi motivo (a distanza d'attacco in cooldown, senza
+    // bersaglio, incastrati) continuavano a camminare. Ora l'Animator si ferma quando il nemico
+    // non avanza (vedi Update), e chi spinge senza avanzare per StuckSeconds fa un passo di lato
+    // per SidestepSeconds (vedi Move), alternando il lato a ogni tentativo.
+    private bool movedThisStep;
+    private Vector3 lastStepPosition;
+    private float stuckTimer;
+    private float sidestepTimer;
+    private Vector3 sidestepDirection;
+    private float sidestepSign = 1f;
+    private const float StuckSeconds = 0.5f;
+    private const float SidestepSeconds = 0.5f;
+    // Sotto questa frazione del passo previsto il nemico conta come bloccato.
+    private const float StuckStepFraction = 0.25f;
 
     public Transform Target => target;
     public bool IsAtObjective => isAtObjective;
@@ -175,9 +172,30 @@ public class EnemyChase : MonoBehaviour
             transform.position = position;
         }
 
+        spawnPoint = rb.position;
         enemyAttack = GetComponent<EnemyAttack>();
-        navPath = new NavMeshPath();
         AcquireNearestTarget();
+    }
+
+    // Camminata solo se avanza davvero (o se sta attaccando: lo stato di attacco deve poter
+    // partire anche da fermo, vedi EnemyAttack.IsAttacking che conta già la carica).
+    void Update()
+    {
+        if (animator != null)
+        {
+            bool animate = movedThisStep || (enemyAttack != null && enemyAttack.IsAttacking);
+            animator.speed = animate ? animationSpeedMultiplier : 0f;
+        }
+    }
+
+    // SerotoninBrawl spegne questo componente e fa camminare lo Sbirro per conto suo: l'Animator
+    // non deve restare fermo dove l'abbiamo lasciato.
+    void OnDisable()
+    {
+        if (animator != null)
+        {
+            animator.speed = animationSpeedMultiplier;
+        }
     }
 
     void OnDestroy()
@@ -201,11 +219,26 @@ public class EnemyChase : MonoBehaviour
         rb.angularVelocity = Vector3.zero;
         isAtObjective = false;
 
+        // Il passo chiesto nel FixedUpdate precedente è andato a segno? rb.position qui è già
+        // quella risolta dalla fisica, dopo gli urti.
+        bool blocked = movedThisStep
+            && HorizontalDistance(rb.position, lastStepPosition) < moveSpeed * Time.fixedDeltaTime * StuckStepFraction;
+        stuckTimer = blocked ? stuckTimer + Time.fixedDeltaTime : 0f;
+        sidestepTimer -= Time.fixedDeltaTime;
+        lastStepPosition = rb.position;
+        movedThisStep = false;
+
         // Percorso obbligatorio dallo spawn (vedi EnemyPath, assegnato da EnemySpawner):
         // finché non è concluso il nemico lo segue e ignora bersagli, aggro del Player e
         // ingaggio dei Raver. All'ultimo waypoint riprende l'AI normale.
         if (FollowPath())
         {
+            return;
+        }
+
+        if (RoutState.IsActive)
+        {
+            FleeHome();
             return;
         }
 
@@ -223,22 +256,6 @@ public class EnemyChase : MonoBehaviour
 
         if (target == null)
         {
-            return;
-        }
-
-        // Boss morto: si scappa vagando a caso invece di caricare il bersaglio (vedi RoutState),
-        // così gli Sbirro non fuggono tutti in linea retta e sincronizzata da esso.
-        if (RoutState.IsActive)
-        {
-            routDirectionTimer += Time.fixedDeltaTime;
-            if (routDirectionTimer >= routDirectionChangeInterval || routDirection == Vector3.zero)
-            {
-                routDirectionTimer = 0f;
-                routDirection = GetRandomDirection();
-            }
-
-            Move(routDirection);
-            Rotate(routDirection);
             return;
         }
 
@@ -274,11 +291,16 @@ public class EnemyChase : MonoBehaviour
         // Il punto di attacco di Console/SoundSystem sta già a objectiveStandoff dalla faccia
         // (vedi GetApproachPoint), quindi va raggiunto quasi esattamente: stopDistance lo
         // farebbe fermare troppo presto, fuori portata.
+        // Vale anche per tutti gli altri bersagli, non solo per il giocoliere: uno stopDistance
+        // più grande del raggio del nemico lo fa fermare a vuoto davanti al Player o al Raver,
+        // che lo aspettano fermi, e il nemico resta lì a camminare sul posto senza mai attaccare.
+        // Succedeva allo Sbirro1 dopo averlo rimpicciolito (raggio 0.9, stopDistance 1.5), e
+        // il tetto qui sotto evita di dover ritoccare il valore a ogni cambio di scala.
         bool isObjectiveTarget = IsObjective(target);
         float stopThreshold = isDetour ? 0f
             : isObjectiveTarget ? 0.2f
             : isChasingAttractor ? ownRadius * 0.9f
-            : stopDistance;
+            : Mathf.Min(stopDistance, ownRadius * 0.9f);
         // Finché l'animazione di attacco è in corso resta fermo e girato com'è: continuando a
         // camminare verso il proprio bersaglio si staccherebbe da quello che sta colpendo (spesso
         // un Raver urtato lungo la strada, non il bersaglio ufficiale) e l'attacco si annullerebbe
@@ -307,63 +329,18 @@ public class EnemyChase : MonoBehaviour
         isAtObjective = isObjectiveTarget && !isDetour && toTarget.magnitude <= ObjectiveReachTolerance;
     }
 
-    // Dove andare adesso per raggiungere approachPoint: se la strada è libera (percorso di due
-    // soli punti) o il NavMesh non c'è (scena senza bake, nemico ancora fuori dall'arena), è
-    // approachPoint stesso e il comportamento resta quello di sempre, linea retta. Se invece
-    // c'è un ostacolo in mezzo, è il prossimo angolo del percorso che lo aggira (isPathCorner).
-    // L'ultimo tratto, dall'ultimo angolo alla meta, va comunque dritto su approachPoint vero:
-    // il punto trovato sul NavMesh può differirne di poco (margini dell'agente).
+    // Dove andare adesso per raggiungere approachPoint (vedi NavPathFollower): la meta stessa a
+    // strada libera, altrimenti il prossimo angolo del percorso che aggira l'ostacolo
+    // (isPathCorner). Ancora fuori dall'arena si va dritti: lì il NavMesh non c'è.
     private Vector3 GetNextWaypoint(Vector3 approachPoint, out bool isPathCorner)
     {
-        isPathCorner = false;
         if (!hasEnteredArena)
         {
+            isPathCorner = false;
             return approachPoint;
         }
 
-        pathRefreshTimer += Time.fixedDeltaTime;
-        if (pathRefreshTimer >= PathRefreshInterval
-            || (approachPoint - pathGoal).sqrMagnitude > PathGoalMoveThreshold * PathGoalMoveThreshold)
-        {
-            pathRefreshTimer = 0f;
-            pathGoal = approachPoint;
-            RecalculatePath(approachPoint);
-        }
-
-        while (pathCornerIndex < pathCornerCount - 1 && HorizontalDistance(rb.position, pathCorners[pathCornerIndex]) <= PathCornerReachRadius)
-        {
-            pathCornerIndex++;
-        }
-
-        if (pathCornerIndex >= pathCornerCount - 1)
-        {
-            return approachPoint;
-        }
-
-        isPathCorner = true;
-        return pathCorners[pathCornerIndex];
-    }
-
-    private void RecalculatePath(Vector3 goal)
-    {
-        pathCornerCount = 0;
-        pathCornerIndex = 0;
-
-        if (!NavMesh.SamplePosition(rb.position, out NavMeshHit start, NavMeshSampleDistance, NavMesh.AllAreas)
-            || !NavMesh.SamplePosition(goal, out NavMeshHit end, NavMeshSampleDistance, NavMesh.AllAreas))
-        {
-            return;
-        }
-
-        // Anche un percorso parziale (meta irraggiungibile) va bene: porta il più vicino possibile.
-        if (!NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, navPath)
-            || navPath.status == NavMeshPathStatus.PathInvalid)
-        {
-            return;
-        }
-
-        pathCornerCount = navPath.GetCornersNonAlloc(pathCorners);
-        pathCornerIndex = 1; // l'angolo 0 è la partenza
+        return navPath.GetNextWaypoint(rb.position, approachPoint, out isPathCorner);
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)
@@ -433,6 +410,7 @@ public class EnemyChase : MonoBehaviour
         }
 
         pathPoints = path.GetWorldPoints();
+        arrivalPoints = pathPoints;
         pathIndex = 0;
         pathReachRadius = path.WaypointReachRadius;
     }
@@ -447,7 +425,8 @@ public class EnemyChase : MonoBehaviour
             return false;
         }
 
-        // Boss morto: si abbandona il percorso e si scappa come gli altri (vedi RoutState).
+        // Partita finita: si abbandona il percorso e si torna indietro come gli altri (vedi
+        // FleeHome, che riparte da pathIndex, i waypoint già superati).
         if (RoutState.IsActive)
         {
             pathPoints = null;
@@ -484,6 +463,17 @@ public class EnemyChase : MonoBehaviour
         // Player resterebbe altrimenti il valore del retarget precedente, e il nemico userebbe
         // la soglia di avvicinamento sbagliata (vedi isChasingAttractor in FixedUpdate).
         isChasingAttractor = false;
+
+        // Obiettivo distrutto, partita persa (DefeatRout): caccia ai Raver ancora in piedi.
+        if (DefeatRout.IsActive)
+        {
+            Transform prey = DefeatRout.FindNearestRaver(transform.position);
+            if (prey != null)
+            {
+                SetTarget(prey);
+                return;
+            }
+        }
 
         // Il Player ha la precedenza su tutto: se è entro playerAggroRadius diventa lui il
         // bersaglio anche quando c'è un giocoliere che sta attirando (vedi RaverJuggler).
@@ -534,8 +524,7 @@ public class EnemyChase : MonoBehaviour
             {
                 lastRollObjective = objective;
                 lastRollDownCount = downGuards;
-                float chance = guards.Count > 0 ? (float)downGuards / guards.Count : 1f;
-                attacksObjectiveDirectly = Random.value < chance;
+                attacksObjectiveDirectly = Random.value < DirectAttackChance(guards.Count, downGuards);
             }
 
             // Chi punta all'obiettivo ci va dritto: non cerca né aggira i Raver vivi, li
@@ -594,7 +583,47 @@ public class EnemyChase : MonoBehaviour
         return guards[index].transform;
     }
 
-    // Tutti i Raver (vivi e a terra) che presidiano l'objective indicato: base condivisa da
+    // Probabilità che uno Sbirro punti dritto all'obiettivo invece che alla sua corsia di guardia:
+    // guardie a terra / guardie totali, 1 se l'obiettivo non ha guardie. In modalità facile è il
+    // quadrato (vedi GameDifficulty): cresce più lentamente ma arriva sempre a 1.
+    private static float DirectAttackChance(int guardCount, int downGuards)
+    {
+        float chance = guardCount > 0 ? (float)downGuards / guardCount : 1f;
+        return GameDifficulty.IsEasy ? chance * chance : chance;
+    }
+
+    // Stessa probabilità, calcolata per un obiettivo: la mostra MinimapUI accanto alla vita di
+    // Console e SoundSystem. Usa lo stesso conteggio del tiro a sorte, così il numero a schermo è quello vero.
+    public static float GetDirectAttackChance(Transform objective, out int guardCount, out int downGuards)
+    {
+        List<RaverHealth> guards = GetGuardsFor(objective);
+        guardCount = guards.Count;
+        downGuards = 0;
+        foreach (RaverHealth guard in guards)
+        {
+            if (guard.IsDown)
+            {
+                downGuards++;
+            }
+        }
+
+        return DirectAttackChance(guardCount, downGuards);
+    }
+
+    // Per i log di controllo: l'obiettivo a cui viene contato questo Raver come guardia (null se
+    // non conta, es. il giocoliere).
+    public static Transform GetGuardedObjective(RaverHealth raver)
+    {
+        if (raver.TryGetComponent(out RaverJuggler juggler) && juggler.IsJuggler)
+        {
+            return null;
+        }
+
+        Vector3 guardPosition = raver.TryGetComponent(out RaverChase raverChase) ? raverChase.GuardPosition : raver.transform.position;
+        return FindNearestObjective(guardPosition);
+    }
+
+    // Tutti i Raver (vivi e a terra, giocoliere escluso) che presidiano l'objective indicato: base condivisa da
     // FindLaneRaver e dal tiro a sorte in AcquireNearestTarget. Il raggruppamento usa il punto
     // di guardia (RaverChase.GuardPosition), non la posizione attuale: un Raver a terra
     // cammina verso la ChilloutZone e, misurato da dove si trova, finirebbe contato
@@ -609,6 +638,14 @@ public class EnemyChase : MonoBehaviour
 
         foreach (RaverHealth raver in FindObjectsByType<RaverHealth>(FindObjectsSortMode.None))
         {
+            // Il giocoliere non è una guardia: attira gli Sbirro e non si difende, quindi va a
+            // terra spesso, e contarlo alzava la probabilità di sfondare dell'obiettivo più
+            // vicino anche con tutte le guardie vere in piedi.
+            if (raver.TryGetComponent(out RaverJuggler juggler) && juggler.IsJuggler)
+            {
+                continue;
+            }
+
             Vector3 guardPosition = raver.TryGetComponent(out RaverChase raverChase)
                 ? raverChase.GuardPosition
                 : raver.transform.position;
@@ -636,7 +673,7 @@ public class EnemyChase : MonoBehaviour
     // cambia e quello vecchio o quello nuovo è un Raver, aggiorna anche il suo EngagedCount
     // (vedi RaverHealth.Engage/Disengage): non serve a questo script (che non sceglie più tra
     // più Raver vicini in base all'occupazione), ma lo leggono EnemyRangedAttack e
-    // IdroSbirroHoseAttack per non far convergere i loro nemici sullo stesso Raver già
+    // IdroSbirro per non far convergere i loro nemici sullo stesso Raver già
     // impegnato da uno Sbirro melee.
     private void SetTarget(Transform newTarget)
     {
@@ -790,10 +827,26 @@ public class EnemyChase : MonoBehaviour
         return nearest;
     }
 
-    private static Vector3 GetRandomDirection()
+    // Partita finita (boss e IdroSbirro abbattuti, vedi RoutState): si torna da dove si è
+    // venuti, a ritroso lungo il percorso d'arrivo fino allo spawner, e lì si sparisce. Dentro
+    // l'arena gli ostacoli si aggirano col NavMesh come nell'inseguimento (GetNextWaypoint).
+    private void FleeHome()
     {
-        float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+        if (routHome == null)
+        {
+            routHome = new RoutHome(spawnPoint, arrivalPoints, pathIndex, pathReachRadius);
+        }
+
+        if (!routHome.TryGetNextStop(rb.position, out Vector3 stop))
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Vector3 toWaypoint = GetNextWaypoint(stop, out _) - rb.position;
+        toWaypoint.y = 0f;
+        Move(toWaypoint);
+        Rotate(toWaypoint);
     }
 
     // stopDistance: sotto questa distanza non avanza oltre (vedi il campo stopDistance);
@@ -806,15 +859,25 @@ public class EnemyChase : MonoBehaviour
             return;
         }
 
-        Vector3 nextPosition = rb.position + direction.normalized * moveSpeed * Time.fixedDeltaTime;
+        if (stuckTimer >= StuckSeconds)
+        {
+            stuckTimer = 0f;
+            sidestepTimer = SidestepSeconds;
+            sidestepSign = -sidestepSign;
+            sidestepDirection = Vector3.Cross(Vector3.up, direction).normalized * sidestepSign;
+        }
+
+        Vector3 heading = sidestepTimer > 0f ? sidestepDirection : direction.normalized;
+        Vector3 nextPosition = rb.position + heading * moveSpeed * Time.fixedDeltaTime;
+        movedThisStep = true;
         rb.MovePosition(ClampToFloor(nextPosition));
     }
 
-    // In fuga (RoutState) il nemico vaga a caso senza sapere dove sia il bordo della mappa:
-    // stesso motivo/fix già applicato in EnemyRangedAttack.
+    // Tiene il nemico dentro l'arena, stesso motivo/fix già applicato in EnemyRangedAttack.
+    // In fuga (RoutState) no: deve uscirne per tornare allo spawner (vedi FleeHome).
     private Vector3 ClampToFloor(Vector3 position)
     {
-        if (FloorBounds.Instance == null)
+        if (FloorBounds.Instance == null || RoutState.IsActive)
         {
             return position;
         }
@@ -830,7 +893,7 @@ public class EnemyChase : MonoBehaviour
         {
             bool insideArena = position.x > bounds.min.x && position.x < bounds.max.x
                 && position.z > bounds.min.z && position.z < bounds.max.z;
-            if (insideArena || RoutState.IsActive)
+            if (insideArena)
             {
                 hasEnteredArena = true;
             }

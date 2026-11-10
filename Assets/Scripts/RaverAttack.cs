@@ -43,6 +43,10 @@ public class RaverAttack : MonoBehaviour
     // Letto da RaverAnimation: true durante la carica di un colpo, è lì che parte il pugno.
     public bool IsAttacking => attackRoutine != null;
 
+    // Letto da RaverAnimation per girare il modello verso chi sta colpendo. Null se non sta
+    // caricando un colpo o se il bersaglio è stato distrutto nel frattempo.
+    public Transform CurrentTarget => currentTarget is Component target && target != null ? target.transform : null;
+
     // Usato da RaverDrugBuff per raddoppiare/ripristinare il danno.
     public void MultiplyDamage(float factor)
     {
@@ -110,6 +114,12 @@ public class RaverAttack : MonoBehaviour
 
         IDamageable damageable = other.GetComponent<IDamageable>();
         if (damageable == null)
+        {
+            return;
+        }
+
+        // Uno Sbirro convertito dalla serotonina (SerotoninBrawl) sta dalla nostra parte.
+        if (damageable is EnemyHealth enemy && enemy.IsCharmed)
         {
             return;
         }

@@ -19,13 +19,25 @@ using UnityEngine;
 public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
 {
     [Header("Vita")]
-    [SerializeField] private int maxHits = 10; // quanti colpi di Sbirro può subire prima di essere distrutto
+    [SerializeField] private int maxHits = 15; // quanti colpi di Sbirro può subire prima di essere distrutto
 
     [Header("Feedback danno")]
     [Tooltip("Se vuoto vengono cercati tutti i Renderer nei figli (le 4 casse): lampeggiano tutte insieme, non solo una, altrimenti il colpo passa facilmente inosservato.")]
     [SerializeField] private Renderer[] targetRenderers;
     [SerializeField] private Color flashColor = Color.red;
     [SerializeField] private float flashDuration = 0.15f; // durata del lampo di colore
+
+    [Header("Sconfitta")]
+    [Tooltip("Nomi dei GameObject in scena che saltano in aria insieme al SoundSystem, ognuno con la sua esplosione.")]
+    [SerializeField] private string[] alsoExplodeNames =
+    {
+        "LEFT_DECO",
+        "RIGHT_DECO",
+        "CLOWN-DECO",
+        "Meshy_AI_Blue_Octopus_Tentacle_0913183028_texture",
+    };
+    [Tooltip("Metri di cui la camera si ferma più avanti del SoundSystem, verso il centro della pista (dietro c'è il mare).")]
+    [SerializeField] private float defeatCameraShift = 2.5f;
 
     private int hitsTaken;
     private bool isDestroyed;
@@ -123,6 +135,11 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
     // (non si somma alla durata rimasta), stesso comportamento di PlayerSoundWavePowerUps.
     public void Activate()
     {
+        if (isDestroyed)
+        {
+            return;
+        }
+
         isActive = true;
         activeTimer = activeDuration;
         musicBoost?.Boost(activeDuration);
@@ -228,11 +245,20 @@ public class SoundSystem : MonoBehaviour, IEnemyAttackTarget
         }
     }
 
+    // Salta in aria come il Player (DefeatSequence): se è fuori dallo schermo la camera prima ci
+    // va, e fino ad allora resta in scena, già non più attaccabile e senza più sparare.
     private void Die()
     {
         isDestroyed = true;
-        GameOverState.Trigger();
-        Destroy(gameObject);
+        isActive = false;
+
+        // Deco e tentacolo sono modelli a parte in scena, come il DJ per la Console.
+        GameObject[] extras = new GameObject[alsoExplodeNames.Length];
+        for (int i = 0; i < alsoExplodeNames.Length; i++)
+        {
+            extras[i] = string.IsNullOrEmpty(alsoExplodeNames[i]) ? null : GameObject.Find(alsoExplodeNames[i]);
+        }
+        DefeatSequence.Play(gameObject, null, extras, defeatCameraShift);
     }
 
     private void PlayHitFlash()

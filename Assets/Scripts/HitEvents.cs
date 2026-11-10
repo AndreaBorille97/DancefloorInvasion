@@ -24,4 +24,22 @@ public static class HitEvents
 
         EnemyHit.Invoke(enemy, origin, direction);
     }
+
+    // Nemico (EnemyHealth) morto, per qualunque causa: onda, scatto, Camper. Lo usa PlayerBerserk
+    // per far tremare lo schermo più forte ad ogni uccisione.
+    public static event Action<GameObject> EnemyKilled;
+
+    public static void RaiseEnemyKilled(GameObject enemy)
+    {
+        EnemyKilled?.Invoke(enemy);
+    }
+
+    // Sbirro convertito da un'onda serotonina invece di morire (EnemyHealth.TakeSerotoninDamage).
+    // PlayerBerserk lo tratta come un'uccisione: tremolio forte e hit-stop.
+    public static event Action<GameObject> EnemyConverted;
+
+    public static void RaiseEnemyConverted(GameObject enemy)
+    {
+        EnemyConverted?.Invoke(enemy);
+    }
 }

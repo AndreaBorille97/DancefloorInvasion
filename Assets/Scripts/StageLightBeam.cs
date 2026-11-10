@@ -217,8 +217,17 @@ public class StageLightBeam : MonoBehaviour
     // faretto di questo frame, non quella del frame prima.
     void LateUpdate()
     {
-        if (!following || followTarget == null)
+        if (!following)
         {
+            return;
+        }
+
+        // Il faretto non c'è più (il SoundSystem è saltato in aria, DefeatSequence): come un figlio
+        // vero, il fascio sparisce con lui, spot light compresa.
+        if (followTarget == null)
+        {
+            following = false;
+            Destroy(gameObject);
             return;
         }
 
@@ -234,7 +243,7 @@ public class StageLightBeam : MonoBehaviour
             return Quaternion.identity;
         }
 
-        float t = (Time.time + sweepPhase) * sweepSpeed * Mathf.PI * 2f;
+        float t = (StageClock.Time + sweepPhase) * sweepSpeed * Mathf.PI * 2f;
         // Tilt al doppio della frequenza del pan: il faro disegna un otto invece di una
         // semplice riga avanti e indietro, che è il movimento tipico delle teste mobili.
         return Quaternion.Euler(Mathf.Sin(t * 2f) * tiltAmplitude, Mathf.Sin(t) * panAmplitude, 0f);
@@ -246,7 +255,7 @@ public class StageLightBeam : MonoBehaviour
     {
         float max = Mathf.Max(color.r, color.g, color.b, 0.0001f);
         Color.RGBToHSV(color / max, out float hue, out float saturation, out _);
-        hue = Mathf.Repeat(hue + Time.time * cycleSpeed, 1f);
+        hue = Mathf.Repeat(hue + StageClock.Time * cycleSpeed, 1f);
         Color cycled = Color.HSVToRGB(hue, saturation, 1f) * max;
         cycled.a = 1f;
         return cycled;

@@ -23,6 +23,14 @@ public class ParabolicProjectile : MonoBehaviour
     [Tooltip("Prefab della nuvoletta lasciata quando la sfera finisce la sua corsa, per colpo diretto o atterraggio a vuoto (vedi SbirroCloud).")]
     [SerializeField] private GameObject cloudPrefab;
 
+    [Header("Esplosione (granata del boss)")]
+    [Tooltip("Grandezza del fungo atomico (MiniNuke3D) che salta dove la sfera finisce la corsa, insieme alla nuvola: a 1 è alto circa 3.7 m. 0 = nessuna esplosione (Sbirro3).")]
+    [SerializeField] private float explosionScale = 0f;
+    [Tooltip("Velocità dell'esplosione: sotto 1 dura di più (a 1 circa 3.6 s).")]
+    [SerializeField] private float explosionSpeed = 0.8f;
+    [Tooltip("MiniNukePuff.shader (particles/MiniNuke3D): assegnato qui finisce anche nelle build, dove Shader.Find non lo troverebbe.")]
+    [SerializeField] private Shader explosionShader;
+
     private Vector3 startPosition;
     private Vector3 targetPosition;
     private float duration;
@@ -94,13 +102,19 @@ public class ParabolicProjectile : MonoBehaviour
     // comparire a mezz'aria dov'è avvenuto l'impatto.
     private void SpawnCloud()
     {
-        if (cloudPrefab == null)
-        {
-            return;
-        }
-
         Vector3 groundPosition = transform.position;
         groundPosition.y = targetPosition.y;
-        Instantiate(cloudPrefab, groundPosition, Quaternion.identity);
+
+        if (explosionScale > 0f)
+        {
+            MiniNuke3D nuke = MiniNuke3D.Spawn(groundPosition, explosionScale, explosionShader);
+            nuke.cameraShake = false; // sposterebbe la camera per conto suo litigando con CameraFollow
+            nuke.speed = explosionSpeed;
+        }
+
+        if (cloudPrefab != null)
+        {
+            Instantiate(cloudPrefab, groundPosition, Quaternion.identity);
+        }
     }
 }

@@ -44,7 +44,7 @@ public class HangingLightsBlink : MonoBehaviour
     {
         if (_bulbs.Count == 0) return;
 
-        _timer += Time.deltaTime;
+        _timer += StageClock.DeltaTime;
         if (_timer < blinkInterval) return;
 
         _timer -= blinkInterval;

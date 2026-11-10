@@ -166,6 +166,8 @@ public class ScreenFrameAnimator : MonoBehaviour
             return null;
         }
 
+        // In build lo shader c'è solo perché lo usa Assets/Resources/UnlitIncluso.mat: Unity
+        // esclude gli shader che nessun materiale usa, e Shader.Find a runtime non lo troverebbe.
         var shader = Shader.Find("Universal Render Pipeline/Unlit");
         if (shader == null)
         {
@@ -236,7 +238,7 @@ public class ScreenFrameAnimator : MonoBehaviour
             return;
         }
 
-        timer += Time.deltaTime;
+        timer += StageClock.DeltaTime;
 
         // evita una divisione per zero (o un ciclo infinito) se bpm/beatsPerLoop vengono lasciati a 0
         float loopDuration = 60f / Mathf.Max(bpm, 0.01f) * Mathf.Max(beatsPerLoop, 0.01f);

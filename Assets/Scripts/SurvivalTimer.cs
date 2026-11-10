@@ -1,14 +1,13 @@
 using UnityEngine;
 
-// Da mettere su un GameObject in scena (es. "GameManager"). Non innesca più la vittoria da
-// solo (vedi IdroSbirroSpawner, che ora la fa scattare alla morte dell'IdroSbirro): serve
-// solo a esporre RemainingSeconds per il conto alla rovescia mostrato in minimappa (vedi
-// MinimapUI), tenuto con lo stesso survivalDuration di IdroSbirroSpawner.spawnTime così il
-// countdown arriva a 0 esattamente quando l'IdroSbirro compare.
+// Da mettere su un GameObject in scena (es. "GameManager"). Non innesca la vittoria (vedi
+// FinalVictory): serve solo a esporre RemainingSeconds per il conto alla rovescia mostrato in
+// minimappa (vedi MinimapUI), che segna l'arrivo del boss. Va tenuto allo stesso tempo di
+// CyberGiorgiaSpawner.spawnDelay.
 public class SurvivalTimer : MonoBehaviour
 {
-    [Tooltip("Secondi dall'inizio della partita dopo cui compare l'IdroSbirro: stesso valore di IdroSbirroSpawner.spawnTime, qui serve solo per il conto alla rovescia in minimappa.")]
-    [SerializeField] private float survivalDuration = 240f;
+    [Tooltip("Secondi dall'inizio della partita dopo cui arriva il boss (CyberGiorgiaSpawner.spawnDelay): qui serve solo per il conto alla rovescia in minimappa.")]
+    [SerializeField] private float survivalDuration = 180f;
 
     private float elapsed;
 
