@@ -14,8 +14,8 @@ using UnityEngine;
 // prima: dopo va rilanciato anche questo.
 public static class Sbirro3SizeMatch
 {
-    private const string ReferencePrefabPath = "Assets/Prefabs/Sbirro2.prefab";
-    private const string TargetPrefabPath = "Assets/Prefabs/Sbirro3.prefab";
+    private const string ReferencePrefabPath = "Assets/Prefabs/Characters/Sbirro2.prefab";
+    private const string TargetPrefabPath = "Assets/Prefabs/Characters/Sbirro3.prefab";
 
     [MenuItem("Tools/Sbirro3/Stessa taglia dello Sbirro2")]
     private static void Run()

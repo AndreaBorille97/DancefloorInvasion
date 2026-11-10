@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 // Utility: rifà il prefab di una munizione mettendoci dentro un modello vero al posto del solido
-// segnaposto (la sfera dello Speed, il cubo schiacciato del Camper), adattandolo da solo —
+// segnaposto (es. la sfera dello Speed), adattandolo da solo —
 // taglia, verso, centratura, collider — e lasciandogli addosso CollectibleShine, cioè il contorno
 // da collectible (sollevata da terra, gira, ondeggia, scintilla).
 //
@@ -59,25 +59,17 @@ public static class AmmoModelBuilder
 
     private static readonly Job SpeedAmmo = new Job
     {
-        PrefabPath = "Assets/Prefabs/SpeedUpPowerUpAmmo.prefab",
-        ModelSource = "Assets/Prefabs/models/blue_punisher",
+        PrefabPath = "Assets/Prefabs/Pickups/SpeedUpPowerUpAmmo.prefab",
+        ModelSource = "Assets/Art/Models/blue_punisher",
         // Un filo più grande della sfera di prima (che era 1 di diametro): si nota di più da
         // lontano senza diventare un ostacolo.
         TargetSize = 1.3f,
         VariantFolders = new[]
         {
-            "Assets/Prefabs/models/blue_punisher",
-            "Assets/Prefabs/models/green_punisher",
-            "Assets/Prefabs/models/pink_punisher",
+            "Assets/Art/Models/blue_punisher",
+            "Assets/Art/Models/green_punisher",
+            "Assets/Art/Models/pink_punisher",
         },
-    };
-
-    private static readonly Job CamperAmmo = new Job
-    {
-        PrefabPath = "Assets/Prefabs/CamperAmmo.prefab",
-        ModelSource = "Assets/Prefabs/models/Tanica.prefab",
-        TargetSize = 1.3f,
-        StandUp = Upright.LongestSideUp,
     };
 
     // Il francobollo di Hoffman (materiale BicycleDayMat, già rimappato dall'import): è una placca,
@@ -89,8 +81,8 @@ public static class AmmoModelBuilder
     // dritto invece che coricato.
     private static readonly Job HoffmanAmmo = new Job
     {
-        PrefabPath = "Assets/Prefabs/HoffmanAmmo.prefab",
-        ModelSource = "Assets/Prefabs/models/hoffman.fbx",
+        PrefabPath = "Assets/Prefabs/Pickups/HoffmanAmmo.prefab",
+        ModelSource = "Assets/Art/Models/hoffman.fbx",
         // 30% più piccola delle altre ammo (1.3).
         TargetSize = 0.91f,
         ModelRotation = new Vector3(-90f, 0f, 0f),
@@ -102,11 +94,11 @@ public static class AmmoModelBuilder
     // lungo, come una bottiglia.
     private static readonly Job LifeUpAmmo = new Job
     {
-        PrefabPath = "Assets/Prefabs/LifeUpAmmo.prefab",
-        ModelSource = "Assets/Prefabs/models/BHUSTE/CIMA.fbx",
+        PrefabPath = "Assets/Prefabs/Pickups/LifeUpAmmo.prefab",
+        ModelSource = "Assets/Art/Models/BHUSTE/CIMA.fbx",
         TargetSize = 1.3f,
         StandUp = Upright.LongestSideUp,
-        MaterialPath = "Assets/Prefabs/models/BHUSTE/Materials/Meshy_AI_Golden_Green_Bud_20261101_texture.mat",
+        MaterialPath = "Assets/Art/Models/BHUSTE/Materials/Meshy_AI_Golden_Green_Bud_20261101_texture.mat",
     };
 
     [MenuItem("Tools/Rebuild Ammo Model/LifeUp (cima)")]
@@ -118,9 +110,6 @@ public static class AmmoModelBuilder
 
     [MenuItem("Tools/Rebuild Ammo Model/Speed (teschio, 3 varianti)")]
     private static void BuildSpeedAmmo() => Build(SpeedAmmo);
-
-    [MenuItem("Tools/Rebuild Ammo Model/Camper (tanica)")]
-    private static void BuildCamperAmmo() => Build(CamperAmmo);
 
     // Oltre al modello, mette nella scena aperta lo spawner delle ammo Hoffman (se non c'è già),
     // copiando il "floor" da uno spawner di ammo esistente. La scena resta da salvare.
@@ -201,18 +190,18 @@ public static class AmmoModelBuilder
 
         try
         {
-            // La radice torna dritta e a scala 1. Il CamperAmmo aveva sia la scala schiacciata
+            // La radice torna dritta e a scala 1. Alcune vecchie ammo avevano sia la scala schiacciata
             // (1.2, 0.16, 1.1) sia una rotazione sua, residui di quando il segnaposto era un cubo
             // ridotto a piastrella inclinata: un modello appeso lì sotto ne esce stirato e storto,
             // e storte sarebbero anche tutte le misure che facciamo qui (ingombro, verso,
             // collider), che ragionano in coordinate mondo. Non si perde niente: gli spawner
-            // istanziano le munizioni con rotazione neutra (vedi CamperSpawner), quindi quella
+            // istanziano le munizioni con rotazione neutra (vedi gli spawner), quindi quella
             // rotazione in partita non c'era comunque.
             prefab.transform.localScale = Vector3.one;
             prefab.transform.rotation = Quaternion.identity;
 
             // Via il solido segnaposto dalla radice: il modello nuovo va appeso come figlio, così
-            // la radice resta pulita con collider e script (com'è fatto anche il Camper).
+            // la radice resta pulita con collider e script.
             RemoveComponent<MeshFilter>(prefab);
             RemoveComponent<MeshRenderer>(prefab);
 

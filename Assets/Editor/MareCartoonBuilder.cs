@@ -22,7 +22,7 @@ public static class MareCartoonBuilder
 {
     private const string SeaObjectName = "Mare";
     private const string ShaderName = "DancefloorInvasion/Mare Cartoon";
-    private const string MaterialPath = "Assets/Material/MareCartoon.mat";
+    private const string MaterialPath = "Assets/Art/Materials/MareCartoon.mat";
 
     // Quanto è grande il piano d'acqua, in metri. Deve solo coprire quello che si vede: la
     // camera guarda in giù a 45 gradi da 13 metri, quindi non arriva mai oltre una cinquantina

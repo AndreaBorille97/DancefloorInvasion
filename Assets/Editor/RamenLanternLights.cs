@@ -4,7 +4,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Utility una tantum: sotto il modello "ramen" (Assets/Prefabs/models/ramen.fbx) ci sono due
+// Utility una tantum: sotto il modello "ramen" (Assets/Art/Models/ramen.fbx) ci sono due
 // lanterne di carta, i nodi "Lanterna_Dx" e "Lanterna_Sx" (materiale "Lanterna_Rossa"). Sono
 // mesh statiche, quindi da sole non emettono luce: qui aggiungiamo una Point Light figlia a
 // ciascuna, rossa e debole, per simulare il bagliore della carta illuminata dall'interno.

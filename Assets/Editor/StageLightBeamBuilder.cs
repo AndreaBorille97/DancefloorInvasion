@@ -17,7 +17,7 @@ using UnityEngine;
 public static class StageLightBeamBuilder
 {
     private const string ShaderName = "DancefloorInvasion/Fascio di Luce";
-    private const string MaterialPath = "Assets/Material/FascioLuce.mat";
+    private const string MaterialPath = "Assets/Art/Materials/FascioLuce.mat";
 
     // Luminosità HDR del colore del fascio: sopra 1, così il Bloom lo prende.
     private const float BeamBrightness = 3f;

@@ -40,7 +40,7 @@ public static class RaverModelSetup
 {
     private const string Tag = "Raver";
     private const string DefaultState = "ballo";
-    private const string Folder = "Assets/Prefabs/models/RAVERS/";
+    private const string Folder = "Assets/Art/Models/RAVERS/";
 
     // Quanto è grande il modello rispetto alla capsula di collisione (1 = alto quanto lei, per
     // il raver3; gli altri in proporzione, vedi MatchRaver3Skeleton). La capsula non cambia.

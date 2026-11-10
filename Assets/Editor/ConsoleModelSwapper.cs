@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // Utility una tantum: sotto l'oggetto "Console" della scena, sostituisce il modello figlio
-// "console_completa" con "capanna_console" (Assets/Prefabs/models/capanna_console.fbx),
+// "console_completa" con "capanna_console" (Assets/Art/Models/capanna_console.fbx),
 // conservando posizione/rotazione/scala locali e l'ordine tra i figli. Passa dall'editor
 // così è Unity a risolvere i fileID interni dell'FBX: farlo a mano nello YAML della scena
 // romperebbe i riferimenti, dato che i due FBX hanno strutture interne diverse.
@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 public static class ConsoleModelSwapper
 {
     private const string OldChildName = "console_completa";
-    private const string NewModelPath = "Assets/Prefabs/models/capanna_console.fbx";
+    private const string NewModelPath = "Assets/Art/Models/capanna_console.fbx";
     private const string NewChildName = "capanna_console";
 
     [MenuItem("Tools/Swap Console Model (console_completa → capanna_console)")]

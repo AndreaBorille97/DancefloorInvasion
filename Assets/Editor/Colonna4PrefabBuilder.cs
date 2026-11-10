@@ -32,9 +32,9 @@ using UnityEngine.SceneManagement;
 // Niente Animator Controller: le animazioni non cambiano mai, non c'e' nessuno stato da gestire.
 public static class Colonna4PrefabBuilder
 {
-    private const string FbxPath = "Assets/Prefabs/models/Colonna4.fbx";
-    private const string PrefabPath = "Assets/Prefabs/Colonna4.prefab";
-    private const string ClipsFolder = "Assets/Prefabs/Colonna4_Clips";
+    private const string FbxPath = "Assets/Art/Models/Colonna4.fbx";
+    private const string PrefabPath = "Assets/Prefabs/World/Colonna4.prefab";
+    private const string ClipsFolder = "Assets/Art/Animations/Colonna4_Clips";
 
     [MenuItem("Tools/Colonna4/Ricrea il prefab")]
     private static void BuildPrefab()
@@ -214,7 +214,7 @@ public static class Colonna4PrefabBuilder
         }
 
         if (AssetDatabase.IsValidFolder(ClipsFolder)) AssetDatabase.DeleteAsset(ClipsFolder);
-        AssetDatabase.CreateFolder("Assets/Prefabs", "Colonna4_Clips");
+        AssetDatabase.CreateFolder("Assets/Art/Animations", "Colonna4_Clips");
 
         var risultato = new List<AnimationClip>();
         var report = new List<string>();

@@ -25,8 +25,8 @@ using UnityEngine.SceneManagement;
 // A modello sistemato e scena salvata, questo file e Colonna4PrefabBuilder si possono cancellare.
 public static class SoundSystemAnimationSetup
 {
-    private const string FbxPath = "Assets/Prefabs/models/sound_system.fbx";
-    private const string ClipsFolder = "Assets/Prefabs/SoundSystem_Clips";
+    private const string FbxPath = "Assets/Art/Models/sound_system.fbx";
+    private const string ClipsFolder = "Assets/Art/Animations/SoundSystem_Clips";
 
     [MenuItem("Tools/Sound System/Prepara le animazioni del nuovo modello")]
     private static void Setup()
@@ -152,7 +152,7 @@ public static class SoundSystemAnimationSetup
         }
 
         if (AssetDatabase.IsValidFolder(ClipsFolder)) AssetDatabase.DeleteAsset(ClipsFolder);
-        AssetDatabase.CreateFolder("Assets/Prefabs", "SoundSystem_Clips");
+        AssetDatabase.CreateFolder("Assets/Art/Animations", "SoundSystem_Clips");
 
         var risultato = new List<AnimationClip>();
         var report = new List<string>();

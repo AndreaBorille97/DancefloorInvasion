@@ -4,17 +4,13 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Ricollega i riferimenti del gauge (lancetta e segmenti della vita): Tools/HUD/Ricollega i
+// Ricollega i riferimenti dell'HUD (segmenti della vita): Tools/HUD/Ricollega i
 // riferimenti del gauge.
 //
 // ── Cosa era rotto ───────────────────────────────────────────────────────────────────────────
 // Quando l'HUD è stato recuperato dal backup (vedi RestoreMissingHud, che infatti avvisava di
 // controllare i campi "Missing"), il componente FuelGaugeHUD si è ripreso gli oggetti ma non
 // tutti i riferimenti a quegli oggetti. In scena risultava:
-//
-//   needle: nessuno            -> la lancetta non si muoveva MAI. FuelGaugeHUD.Update calcola
-//                                 l'angolo e poi lo scrive su un riferimento vuoto: nessun
-//                                 errore in Console, semplicemente non succede niente.
 //
 //   lifeSegments: 8 caselle,   -> la barra vita mostrava numeri sbagliati. ApplyLife accende i
 //   ma le prime 4 vuote           primi "lit" segmenti dell'ARRAY, e le caselle vuote vengono
@@ -23,7 +19,7 @@ using UnityEngine.UI;
 //                                 Risultato: barra completamente spenta col Player ancora vivo,
 //                                 e i 4 segmenti veri fermi sul colore con cui erano nati.
 //
-// Gli oggetti erano tutti lì (8 life_segment e 1 needle), quindi non c'era niente da ricostruire:
+// Gli oggetti erano tutti lì, quindi non c'era niente da ricostruire:
 // bastava riagganciarli. Questo comando li ritrova per nome sotto l'HUD e riempie i campi.
 //
 // I segmenti vengono ordinati da sinistra a destra per posizione sullo schermo e non per ordine
@@ -31,7 +27,6 @@ using UnityEngine.UI;
 // FuelGaugeHUD si aspetta, mentre l'ordine in Hierarchy può essere qualsiasi.
 public static class FuelGaugeHudRepair
 {
-    private const string NeedleName = "needle";
     private const string SegmentName = "life_segment";
 
     [MenuItem("Tools/HUD/Ricollega i riferimenti del gauge")]
@@ -49,15 +44,11 @@ public static class FuelGaugeHudRepair
 
         Undo.RecordObject(hud, "Ricollega i riferimenti del gauge");
 
-        RectTransform needle = hud.GetComponentsInChildren<RectTransform>(true)
-            .FirstOrDefault(rect => rect.name.ToLowerInvariant().Contains(NeedleName));
-
         Image[] segments = hud.GetComponentsInChildren<Image>(true)
             .Where(image => image.name.ToLowerInvariant().Contains(SegmentName))
             .OrderBy(image => image.rectTransform.position.x)
             .ToArray();
 
-        hud.needle = needle;
         if (segments.Length > 0)
         {
             hud.lifeSegments = segments;
@@ -67,7 +58,6 @@ public static class FuelGaugeHudRepair
         EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
 
         string message =
-            $"Lancetta: {(needle != null ? "ricollegata" : "NON TROVATA, cerco un oggetto chiamato \"" + NeedleName + "\"")}.\n" +
             $"Segmenti vita: {segments.Length} ricollegati, tutti bianchi; ogni colpo ne fa sparire uno.";
 
         if (segments.Length == 0)

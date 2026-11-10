@@ -24,18 +24,18 @@ using UnityEngine;
 // nell'Inspector del prefab tornano a quelli scritti qui sotto.
 public static class CyberGiorgiaSetup
 {
-    private const string Folder = "Assets/Prefabs/models/CYBERGIORGIA";
+    private const string Folder = "Assets/Art/Models/CYBERGIORGIA";
     private const string ModelPath = Folder + "/cybergiorgia.fbx";
     private const string MaterialPath = Folder + "/giorgia_mat.mat";
     private const string TexturePath = Folder + "/Meshy_AI_cyber_businesswoman_v_biped_texture_0.png";
     private const string ControllerPath = Folder + "/CyberGiorgia_Controller.controller";
 
-    private const string BossPrefabPath = "Assets/Prefabs/CyberGiorgia.prefab";
-    private const string SizeTemplatePath = "Assets/Prefabs/Sbirro1.prefab";
-    private const string SourceGrenadePath = "Assets/Prefabs/SbirroSfera.prefab";
-    private const string SourceCloudPath = "Assets/Prefabs/SbirroNuvola.prefab";
-    private const string GrenadePath = "Assets/Prefabs/CyberGiorgiaSfera.prefab";
-    private const string CloudPath = "Assets/Prefabs/CyberGiorgiaNuvola.prefab";
+    private const string BossPrefabPath = "Assets/Prefabs/Characters/CyberGiorgia.prefab";
+    private const string SizeTemplatePath = "Assets/Prefabs/Characters/Sbirro1.prefab";
+    private const string SourceGrenadePath = "Assets/Prefabs/Characters/SbirroSfera.prefab";
+    private const string SourceCloudPath = "Assets/Prefabs/Characters/SbirroNuvola.prefab";
+    private const string GrenadePath = "Assets/Prefabs/Characters/CyberGiorgiaSfera.prefab";
+    private const string CloudPath = "Assets/Prefabs/Characters/CyberGiorgiaNuvola.prefab";
     private const string LandingClipPath = "Assets/Audio/GIORGIA.mp3"; // suonato quando atterra
 
     // Le clip dentro l'FBX si chiamano "SmartRigArmature|<mossa>".
@@ -60,7 +60,7 @@ public static class CyberGiorgiaSetup
     private const float GrenadeSpeedVsSbirro3 = 0.75f;
     // All'impatto la granata fa saltare un fungo atomico (MiniNuke3D) di questa grandezza.
     private const float GrenadeExplosionScale = 1f;
-    private const string ExplosionShaderPath = "Assets/Prefabs/particles/MiniNuke3D/MiniNukePuff.shader";
+    private const string ExplosionShaderPath = "Assets/VFX/MiniNuke3D/MiniNukePuff.shader";
 
     // EnemyHealth / EnemyRangedAttack del boss.
     private const float MaxHealth = 720f;

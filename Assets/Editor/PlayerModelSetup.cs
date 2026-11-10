@@ -21,7 +21,7 @@ using UnityEngine;
 public static class PlayerModelSetup
 {
     private const string Tag = "Player";
-    private const string Folder = "Assets/Prefabs/models/player/TwinStickPlayer/";
+    private const string Folder = "Assets/Art/Models/player/TwinStickPlayer/";
     private const string ModelPath = Folder + "PLAYER.fbx";
     private const string MaterialPath = Folder + "PLAYER_mat.mat";
     private const string TexturePath = Folder + "Meshy_AI_Crimson_Sentinel_Mech_biped_texture_0.png";

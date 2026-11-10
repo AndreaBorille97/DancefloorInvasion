@@ -34,13 +34,13 @@ using UnityEngine;
 // È ripetibile: rilanciarlo rifà il montaggio da capo senza accumulare figli.
 public static class Sbirro2ModelSetup
 {
-    private const string TemplatePrefabPath = "Assets/Prefabs/Sbirro1.prefab";
-    private const string TemplateControllerPath = "Assets/Prefabs/models/Animations/Sbirro1_Controller.controller";
-    private const string ControllerPath = "Assets/Prefabs/models/Animations/Sbirro2_Controller.controller";
-    private const string TargetPrefabPath = "Assets/Prefabs/Sbirro2.prefab";
-    private const string ModelPath = "Assets/Prefabs/models/sbirro_2_animato.fbx";
-    private const string MaterialPath = "Assets/Texture/Materials/sbirro_2_texture.mat";
-    private const string TexturePath = "Assets/Texture/sbirro2_texture.png";
+    private const string TemplatePrefabPath = "Assets/Prefabs/Characters/Sbirro1.prefab";
+    private const string TemplateControllerPath = "Assets/Art/Models/Animations/Sbirro1_Controller.controller";
+    private const string ControllerPath = "Assets/Art/Models/Animations/Sbirro2_Controller.controller";
+    private const string TargetPrefabPath = "Assets/Prefabs/Characters/Sbirro2.prefab";
+    private const string ModelPath = "Assets/Art/Models/sbirro_2_animato.fbx";
+    private const string MaterialPath = "Assets/Art/Textures/Materials/sbirro_2_texture.mat";
+    private const string TexturePath = "Assets/Art/Textures/sbirro2_texture.png";
 
     // Come si chiama, dentro l'FBX, il materiale del corpo: è quello che va sostituito con il
     // materiale del progetto. Gli altri (Acciaio, Nylon, Plastica_Nera, Policarbonato,
@@ -72,7 +72,7 @@ public static class Sbirro2ModelSetup
     private const float BodySmoothness = 0.25f;
 
     // Dove finiscono i materiali dell'equipaggiamento una volta tirati fuori dall'FBX.
-    private const string EquipmentFolder = "Assets/Material/Sbirro2";
+    private const string EquipmentFolder = "Assets/Art/Materials/Sbirro2";
 
     // Quanto si accendono scudo, acciaio, nylon e manganello: una frazione del loro stesso
     // colore, aggiunta come luce propria. Non si tocca il colore base — quello È l'oggetto, e
@@ -481,7 +481,7 @@ public static class Sbirro2ModelSetup
     {
         if (!AssetDatabase.IsValidFolder(EquipmentFolder))
         {
-            AssetDatabase.CreateFolder("Assets/Material", "Sbirro2");
+            AssetDatabase.CreateFolder("Assets/Art/Materials", "Sbirro2");
         }
 
         bool extracted = false;

@@ -55,7 +55,7 @@ public static class SceneLightingModes
     private static readonly Preset Tramonto = new Preset
     {
         nome = "Tramonto rosso",
-        cieloPath = "Assets/Material/CieloTramonto.mat",
+        cieloPath = "Assets/Art/Materials/CieloTramonto.mat",
 
         elevazioneSole = 2.5f,
         intensitaSole = 0.85f,
@@ -89,7 +89,7 @@ public static class SceneLightingModes
     private static readonly Preset Crepuscolo = new Preset
     {
         nome = "Crepuscolo (ora blu)",
-        cieloPath = "Assets/Material/CieloCrepuscolo.mat",
+        cieloPath = "Assets/Art/Materials/CieloCrepuscolo.mat",
 
         elevazioneSole = -1.5f,
         intensitaSole = 0.18f,

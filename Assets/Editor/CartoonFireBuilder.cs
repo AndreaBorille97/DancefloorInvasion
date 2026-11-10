@@ -20,7 +20,7 @@ using UnityEngine;
 public static class CartoonFireBuilder
 {
     private const string ShaderName = "DancefloorInvasion/Fuoco Cartoon";
-    private const string MaterialPath = "Assets/Material/FuocoCartoon.mat";
+    private const string MaterialPath = "Assets/Art/Materials/FuocoCartoon.mat";
 
     // Quanto è alto il fuocherello, in metri. Piccolo: è un fuoco da spiaggia, non un rogo.
     private const float FlameHeight = 1.1f;

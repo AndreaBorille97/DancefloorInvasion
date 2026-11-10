@@ -5,7 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Sotto il modello "negozio_dischi" (Assets/Prefabs/models/negozio_dischi.fbx) c'è una lanterna
+// Sotto il modello "negozio_dischi" (Assets/Art/Models/negozio_dischi.fbx) c'è una lanterna
 // da insegna fatta di più pezzi: LanternTop/Bar/Bar.001-3/Ring/Wire/Bot/Glass, con un materiale
 // "Lantern" (probabilmente sul vetro). Come per le lanterne del ramen, una Point Light da sola
 // non basta a farla vedere accesa in gioco (URP ha le Additional Light in modalità Per Vertex e
